@@ -17,7 +17,7 @@ const ModuleSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['video', 'pdf', 'link', 'text'],
+    enum: ['video', 'pdf', 'link', 'text', 'task'],
     required: true
   },
   content: {

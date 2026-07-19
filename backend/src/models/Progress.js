@@ -15,6 +15,18 @@ const ProgressSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Module'
   }],
+  taskSubmissions: [{
+    moduleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Module' },
+    githubLink: { type: String },
+    submittedAt: { type: Date, default: Date.now }
+  }],
+  codingTaskSubmission: {
+    githubLink: { type: String },
+    employeeMessage: { type: String },
+    status: { type: String, enum: ['pending', 'working', 'not-working'], default: 'pending' },
+    feedback: { type: String },
+    submittedAt: { type: Date }
+  },
   status: {
     type: String,
     enum: ['not-started', 'in-progress', 'completed'],

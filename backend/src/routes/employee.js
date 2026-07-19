@@ -6,6 +6,7 @@ const Course = require('../models/Course');
 const Module = require('../models/Module');
 const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
+const CodingTask = require('../models/CodingTask');
 const { protect, employee } = require('../middleware/auth');
 
 // @desc    Get courses assigned to the logged-in employee
@@ -88,7 +89,8 @@ router.get('/courses/:courseId', protect, employee, async (req, res) => {
 
     const modules = await Module.find({ courseId }).sort('order');
     const quiz = await Quiz.findOne({ courseId }); // Supports 1 quiz per course
-    const progress = await Progress.findOne({ userId: req.user._id, courseId }) || { completedModules: [], status: 'not-started', percentage: 0 };
+    const codingTask = await CodingTask.findOne({ courseId }); // 1 coding task per course
+    const progress = await Progress.findOne({ userId: req.user._id, courseId }) || { completedModules: [], taskSubmissions: [], codingTaskSubmission: null, status: 'not-started', percentage: 0 };
 
     // Fetch quiz attempts if quiz exists
     let quizAttempts = [];
@@ -114,11 +116,14 @@ router.get('/courses/:courseId', protect, employee, async (req, res) => {
       } : null,
       progress: {
         completedModules: progress.completedModules,
+        taskSubmissions: progress.taskSubmissions || [],
+        codingTaskSubmission: progress.codingTaskSubmission || null,
         status: progress.status,
         percentage: progress.percentage,
         completedDate: assignment.completedDate
       },
-      quizAttempts
+      quizAttempts,
+      codingTask
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error loading course player details', error: error.message });
@@ -169,26 +174,29 @@ router.post('/courses/:courseId/modules/:moduleId/complete', protect, employee, 
     const totalModules = await Module.countDocuments({ courseId });
     progress.percentage = totalModules > 0 ? Math.round((progress.completedModules.length / totalModules) * 100) : 100;
 
-    // Check if overall course is completed (we also look at quizzes, but modules completion is the core metric)
+    // Check if overall course is completed
     if (progress.percentage === 100) {
-      // Check if a quiz exists
       const quiz = await Quiz.findOne({ courseId });
+      const codingTask = await CodingTask.findOne({ courseId });
+      
+      let quizPassed = true;
       if (quiz) {
-        // If there's a quiz, user must pass the quiz to fully mark course completed.
-        // Let's check if they passed it.
         const passedQuiz = await QuizAttempt.findOne({ userId: req.user._id, quizId: quiz._id, passed: true });
-        if (passedQuiz) {
-          progress.status = 'completed';
-          assignment.status = 'completed';
-          assignment.completedDate = new Date();
-        } else {
-          progress.status = 'in-progress'; // modules done, but quiz pending/failed
-          assignment.status = 'in-progress';
-        }
-      } else {
+        quizPassed = !!passedQuiz;
+      }
+
+      let codingTaskPassed = true;
+      if (codingTask) {
+        codingTaskPassed = progress.codingTaskSubmission?.status === 'working';
+      }
+
+      if (quizPassed && codingTaskPassed) {
         progress.status = 'completed';
         assignment.status = 'completed';
         assignment.completedDate = new Date();
+      } else {
+        progress.status = 'in-progress';
+        assignment.status = 'in-progress';
       }
     } else {
       progress.status = 'in-progress';
@@ -207,6 +215,110 @@ router.post('/courses/:courseId/modules/:moduleId/complete', protect, employee, 
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error updating module completion status', error: error.message });
+  }
+});
+
+// @desc    Submit GitHub task link for a module
+// @route   POST /api/employee/courses/:courseId/modules/:moduleId/submit-task
+// @access  Private/Employee
+router.post('/courses/:courseId/modules/:moduleId/submit-task', protect, employee, async (req, res) => {
+  const { courseId, moduleId } = req.params;
+  const { githubLink } = req.body;
+
+  try {
+    if (!githubLink) {
+      return res.status(400).json({ message: 'GitHub link is required' });
+    }
+
+    // 1. Verify module and assignment
+    const moduleItem = await Module.findById(moduleId);
+    if (!moduleItem || moduleItem.type !== 'task') {
+      return res.status(404).json({ message: 'Task module not found' });
+    }
+
+    const assignment = await Assignment.findOne({ userId: req.user._id, courseId });
+    if (!assignment) {
+      return res.status(403).json({ message: 'You are not assigned to this course' });
+    }
+
+    // 2. Find or create progress record
+    let progress = await Progress.findOne({ userId: req.user._id, courseId });
+    if (!progress) {
+      progress = await Progress.create({
+        userId: req.user._id,
+        courseId,
+        completedModules: [],
+        taskSubmissions: [],
+        status: 'in-progress',
+        percentage: 0
+      });
+    }
+
+    // 3. Check if already submitted and update or push new submission
+    const existingSubmissionIndex = progress.taskSubmissions.findIndex(sub => sub.moduleId.toString() === moduleId);
+    if (existingSubmissionIndex !== -1) {
+      progress.taskSubmissions[existingSubmissionIndex].githubLink = githubLink;
+      progress.taskSubmissions[existingSubmissionIndex].submittedAt = new Date();
+    } else {
+      progress.taskSubmissions.push({
+        moduleId,
+        githubLink,
+        submittedAt: new Date()
+      });
+    }
+
+    // 4. Mark module as complete if it isn't already
+    const isCompleted = progress.completedModules.includes(moduleId);
+    if (!isCompleted) {
+      progress.completedModules.push(moduleId);
+    }
+
+    // 5. Update percentage
+    const totalModules = await Module.countDocuments({ courseId });
+    progress.percentage = totalModules > 0 ? Math.round((progress.completedModules.length / totalModules) * 100) : 100;
+
+    // Check if overall course is completed
+    if (progress.percentage === 100) {
+      const quiz = await Quiz.findOne({ courseId });
+      const codingTask = await CodingTask.findOne({ courseId });
+      
+      let quizPassed = true;
+      if (quiz) {
+        const passedQuiz = await QuizAttempt.findOne({ userId: req.user._id, quizId: quiz._id, passed: true });
+        quizPassed = !!passedQuiz;
+      }
+
+      let codingTaskPassed = true;
+      if (codingTask) {
+        codingTaskPassed = !!progress.codingTaskSubmission?.fileUrl;
+      }
+
+      if (quizPassed && codingTaskPassed) {
+        progress.status = 'completed';
+        assignment.status = 'completed';
+        assignment.completedDate = new Date();
+      } else {
+        progress.status = 'in-progress';
+        assignment.status = 'in-progress';
+      }
+    } else {
+      progress.status = 'in-progress';
+      assignment.status = 'in-progress';
+    }
+
+    progress.lastAccessed = new Date();
+    await progress.save();
+    await assignment.save();
+
+    res.json({
+      message: 'Task submitted successfully',
+      completedModules: progress.completedModules,
+      percentage: progress.percentage,
+      status: progress.status,
+      taskSubmissions: progress.taskSubmissions
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error submitting task', error: error.message });
   }
 });
 
@@ -266,14 +378,37 @@ router.post('/quizzes/:quizId/submit', protect, employee, async (req, res) => {
         const totalModules = await Module.countDocuments({ courseId });
         const allModulesDone = progress.completedModules.length === totalModules;
         
-        if (allModulesDone) {
-          progress.status = 'completed';
-          assignment.status = 'completed';
-          assignment.completedDate = new Date();
-          
-          await progress.save();
-          await assignment.save();
-        }
+    // Check if overall course is completed
+    if (progress.percentage === 100) {
+      const quiz = await Quiz.findOne({ courseId });
+      const codingTask = await CodingTask.findOne({ courseId });
+      
+      let quizPassed = true;
+      if (quiz) {
+        const passedQuiz = await QuizAttempt.findOne({ userId: req.user._id, quizId: quiz._id, passed: true });
+        quizPassed = !!passedQuiz;
+      }
+
+      let codingTaskPassed = true;
+      if (codingTask) {
+        codingTaskPassed = !!progress.codingTaskSubmission?.fileUrl;
+      }
+
+      if (quizPassed && codingTaskPassed) {
+        progress.status = 'completed';
+        assignment.status = 'completed';
+        assignment.completedDate = new Date();
+      } else {
+        progress.status = 'in-progress';
+        assignment.status = 'in-progress';
+      }
+    } else {
+      progress.status = 'in-progress';
+      assignment.status = 'in-progress';
+    }
+
+        await progress.save();
+        await assignment.save();
       }
     }
 
@@ -288,6 +423,107 @@ router.post('/quizzes/:quizId/submit', protect, employee, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error submitting quiz', error: error.message });
+  }
+});
+
+module.exports = router;
+
+// @desc    Submit github link for course coding task
+// @route   POST /api/employee/courses/:courseId/submit-coding-task
+// @access  Private/Employee
+router.post('/courses/:courseId/submit-coding-task', protect, employee, async (req, res) => {
+  const courseId = req.params.courseId;
+  const { githubLink, employeeMessage } = req.body;
+
+  try {
+    if (!githubLink) {
+      return res.status(400).json({ message: 'GitHub link is required' });
+    }
+
+    const codingTask = await CodingTask.findOne({ courseId });
+    if (!codingTask) {
+      return res.status(404).json({ message: 'Coding Task not found for this course' });
+    }
+
+    const assignment = await Assignment.findOne({ userId: req.user._id, courseId });
+    if (!assignment) {
+      return res.status(403).json({ message: 'You are not assigned to this course' });
+    }
+
+    let progress = await Progress.findOne({ userId: req.user._id, courseId });
+    if (!progress) {
+      progress = await Progress.create({
+        userId: req.user._id,
+        courseId,
+        completedModules: [],
+        taskSubmissions: [],
+        status: 'in-progress',
+        percentage: 0
+      });
+    }
+
+    progress.codingTaskSubmission = {
+      githubLink,
+      employeeMessage,
+      submittedAt: new Date(),
+      status: 'pending',
+      feedback: ''
+    };
+
+    // Check if overall course is completed
+    if (progress.percentage === 100) {
+      const quiz = await Quiz.findOne({ courseId });
+      
+      let quizPassed = true;
+      if (quiz) {
+        const passedQuiz = await QuizAttempt.findOne({ userId: req.user._id, quizId: quiz._id, passed: true });
+        quizPassed = !!passedQuiz;
+      }
+
+      if (quizPassed && progress.codingTaskSubmission?.status === 'working') {
+        progress.status = 'completed';
+        assignment.status = 'completed';
+        assignment.completedDate = new Date();
+      } else {
+        progress.status = 'in-progress';
+        assignment.status = 'in-progress';
+      }
+    } else {
+      progress.status = 'in-progress';
+      assignment.status = 'in-progress';
+    }
+
+    progress.lastAccessed = new Date();
+    await progress.save();
+    await assignment.save();
+
+    res.json({
+      message: 'Coding Task submitted successfully',
+      codingTaskSubmission: progress.codingTaskSubmission,
+      status: progress.status
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error submitting coding task', error: error.message });
+  }
+});
+
+// @desc    Delete coding task submission
+// @route   DELETE /api/employee/courses/:courseId/coding-task
+// @access  Private/Employee
+router.delete('/courses/:courseId/coding-task', protect, employee, async (req, res) => {
+  const courseId = req.params.courseId;
+  try {
+    const progress = await Progress.findOne({ userId: req.user._id, courseId });
+    if (!progress) {
+      return res.status(404).json({ message: 'Progress not found' });
+    }
+
+    progress.codingTaskSubmission = undefined;
+    await progress.save();
+
+    res.json({ message: 'Submission deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error deleting coding task submission', error: error.message });
   }
 });
 

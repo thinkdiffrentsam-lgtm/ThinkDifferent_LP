@@ -3,6 +3,7 @@ const router = express.Router();
 const Course = require('../models/Course');
 const Module = require('../models/Module');
 const Quiz = require('../models/Quiz');
+const CodingTask = require('../models/CodingTask');
 const Assignment = require('../models/Assignment');
 const Progress = require('../models/Progress');
 const { protect, admin } = require('../middleware/auth');
@@ -36,11 +37,13 @@ router.get('/:id', protect, async (req, res) => {
     // Fetch its modules and quizzes
     const modules = await Module.find({ courseId: course._id }).sort('order');
     const quizzes = await Quiz.find({ courseId: course._id });
+    const codingTask = await CodingTask.findOne({ courseId: course._id });
 
     res.json({
       course,
       modules,
-      quizzes
+      quizzes,
+      codingTask
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error fetching course details', error: error.message });
@@ -111,6 +114,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
     // Delete corresponding child data
     await Module.deleteMany({ courseId: course._id });
     await Quiz.deleteMany({ courseId: course._id });
+    await CodingTask.deleteMany({ courseId: course._id });
     await Assignment.deleteMany({ courseId: course._id });
     await Progress.deleteMany({ courseId: course._id });
 
@@ -276,6 +280,62 @@ router.delete('/:courseId/quizzes/:quizId', protect, admin, async (req, res) => 
     res.json({ message: 'Quiz deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error deleting quiz', error: error.message });
+  }
+});
+
+// @desc    Create or update a coding task for a course
+// @route   POST /api/courses/:courseId/coding-task
+// @access  Private/Admin
+router.post('/:courseId/coding-task', protect, admin, async (req, res) => {
+  const { title, description, starterCodeUrl } = req.body;
+  const courseId = req.params.courseId;
+
+  try {
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    if (!title || !description) {
+      return res.status(400).json({ message: 'Please provide coding task title and description' });
+    }
+
+    let codingTask = await CodingTask.findOne({ courseId });
+
+    if (codingTask) {
+      codingTask.title = title;
+      codingTask.description = description;
+      codingTask.starterCodeUrl = starterCodeUrl !== undefined ? starterCodeUrl : codingTask.starterCodeUrl;
+      await codingTask.save();
+    } else {
+      codingTask = await CodingTask.create({
+        courseId,
+        title,
+        description,
+        starterCodeUrl: starterCodeUrl || ''
+      });
+    }
+
+    res.status(201).json(codingTask);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error managing coding task', error: error.message });
+  }
+});
+
+// @desc    Delete coding task
+// @route   DELETE /api/courses/:courseId/coding-task
+// @access  Private/Admin
+router.delete('/:courseId/coding-task', protect, admin, async (req, res) => {
+  try {
+    const codingTask = await CodingTask.findOne({ courseId: req.params.courseId });
+    if (!codingTask) {
+      return res.status(404).json({ message: 'Coding Task not found' });
+    }
+
+    await CodingTask.findByIdAndDelete(codingTask._id);
+    res.json({ message: 'Coding Task deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error deleting coding task', error: error.message });
   }
 });
 
