@@ -11,5 +11,8 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  esbuild: {
+    drop: ['console', 'debugger'],
   }
 });

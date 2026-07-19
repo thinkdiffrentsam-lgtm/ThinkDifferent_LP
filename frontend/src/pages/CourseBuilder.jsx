@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
+import Papa from 'papaparse';
 import { 
   ArrowLeft, 
   Video, 
@@ -14,10 +15,12 @@ import {
   Check, 
   AlertCircle,
   Clock,
-  Loader2
+  Loader2,
+  Upload
 } from 'lucide-react';
 
 const CourseBuilder = () => {
+  const fileInputRef = useRef(null);
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
@@ -199,6 +202,85 @@ const CourseBuilder = () => {
         points: 10
       }
     ]);
+  };
+
+  const handleCSVUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const parsedQuestions = [];
+        let hasError = false;
+
+        results.data.forEach((row, idx) => {
+          try {
+            // Map headers to properties (e.g. Question, Option 1, Option 2, Option 3, Option 4, Correct Option, Points)
+            const keys = Object.keys(row);
+            
+            // Allow loose matching of keys just in case
+            const getVal = (search) => {
+              const key = keys.find(k => k.toLowerCase().includes(search.toLowerCase()));
+              return key ? row[key] : '';
+            };
+
+            const questionText = getVal('question') || getVal('prompt');
+            const opt1 = getVal('option 1') || getVal('choice 1');
+            const opt2 = getVal('option 2') || getVal('choice 2');
+            const opt3 = getVal('option 3') || getVal('choice 3');
+            const opt4 = getVal('option 4') || getVal('choice 4');
+            const correctOptStr = getVal('correct option') || getVal('answer');
+            const pointsStr = getVal('points') || getVal('score');
+
+            if (!questionText || !opt1 || !opt2 || !opt3 || !opt4 || !correctOptStr) {
+              console.warn(`Row ${idx + 1} is missing required fields. Skipping.`);
+              hasError = true;
+              return;
+            }
+
+            const correctOptMatch = correctOptStr.toString().match(/\d+/);
+            const correctOptionIndex = correctOptMatch ? parseInt(correctOptMatch[0], 10) - 1 : NaN;
+            const points = parseInt(pointsStr, 10) || 10;
+
+            if (isNaN(correctOptionIndex) || correctOptionIndex < 0 || correctOptionIndex > 3) {
+              console.warn(`Row ${idx + 1} has an invalid correct option index. Must be 1-4. Skipping.`);
+              hasError = true;
+              return;
+            }
+
+            parsedQuestions.push({
+              questionText,
+              options: [opt1, opt2, opt3, opt4],
+              correctOptionIndex,
+              points
+            });
+          } catch (err) {
+            console.error('Error parsing row:', err);
+            hasError = true;
+          }
+        });
+
+        if (parsedQuestions.length > 0) {
+          setQuizQuestions(prev => [...prev, ...parsedQuestions]);
+          showNotification(`Successfully imported ${parsedQuestions.length} questions!`);
+        } else {
+          setError('Failed to import questions. Ensure your CSV matches the required format.');
+        }
+
+        if (hasError) {
+          setError('Some rows were skipped due to missing or invalid data.');
+        }
+
+        // Reset input
+        e.target.value = '';
+      },
+      error: (error) => {
+        setError(`Failed to parse CSV: ${error.message}`);
+        e.target.value = '';
+      }
+    });
   };
 
   const deleteQuestion = (index) => {
@@ -604,14 +686,31 @@ const CourseBuilder = () => {
           <div class="space-y-4 mt-6">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider">Questions ({quizQuestions.length})</h3>
-              <button
-                type="button"
-                onClick={addQuestion}
-                class="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-indigo-650 border border-slate-200/50 text-xs font-bold px-3 py-1.5 rounded-lg transition"
-              >
-                <Plus class="h-3.5 w-3.5" />
-                <span>Add Question</span>
-              </button>
+              <div class="flex items-center space-x-2">
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  onChange={handleCSVUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  class="flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/50 text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                >
+                  <Upload class="h-3.5 w-3.5" />
+                  <span>Bulk Import CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={addQuestion}
+                  class="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-indigo-650 border border-slate-200/50 text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                >
+                  <Plus class="h-3.5 w-3.5" />
+                  <span>Add Question</span>
+                </button>
+              </div>
             </div>
 
             {quizQuestions.length === 0 ? (
