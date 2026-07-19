@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://thinkdifferent-lp-2.onrender.com/api', // Empty baseUrl ensures requests match local domain and hit Vite's port 3000 proxy (/api)
+  // Point to the Render backend in production, otherwise use empty string (Vite proxy)
+  baseURL: import.meta.env.PROD ? 'https://thinkdifferent-lp-2.onrender.com' : '', 
 });
 
 // Automatically inject JWT token into requests
