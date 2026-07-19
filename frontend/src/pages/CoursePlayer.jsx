@@ -364,14 +364,21 @@ const CoursePlayer = () => {
                   <div class="space-y-4">
                     {/* Render embed if stream URL is a Youtube string, else render native video player */}
                     {activeItem.content.includes('youtube.com') || activeItem.content.includes('youtu.be') ? (
-                      <div class="aspect-video w-full rounded-xl overflow-hidden bg-black border border-slate-205">
-                        <iframe
-                          src={activeItem.content.replace('watch?v=', 'embed/')}
-                          title={activeItem.title}
-                          class="w-full h-full"
-                          allowFullScreen
-                        ></iframe>
-                      </div>
+                      (() => {
+                        const match = activeItem.content.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+                        const videoId = (match && match[2].length === 11) ? match[2] : null;
+                        const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : activeItem.content;
+                        return (
+                          <div class="aspect-video w-full rounded-xl overflow-hidden bg-black border border-slate-205">
+                            <iframe
+                              src={embedUrl}
+                              title={activeItem.title}
+                              class="w-full h-full"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        );
+                      })()
                     ) : (
                       <div class="aspect-video w-full rounded-xl bg-black border border-slate-200 relative overflow-hidden group">
                         <video 
