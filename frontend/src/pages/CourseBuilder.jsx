@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Clock,
   Loader2,
-  Upload
+  Upload,
+  FileCode
 } from 'lucide-react';
 
 const CourseBuilder = () => {
@@ -25,6 +26,7 @@ const CourseBuilder = () => {
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
   const [quiz, setQuiz] = useState(null);
+  const [codingTask, setCodingTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -49,6 +51,13 @@ const CourseBuilder = () => {
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [quizSaving, setQuizSaving] = useState(false);
 
+  // Coding Task editor state
+  const [ctTitle, setCtTitle] = useState('');
+  const [ctDesc, setCtDesc] = useState('');
+  const [ctStarterCodeUrl, setCtStarterCodeUrl] = useState('');
+  const [ctSaving, setCtSaving] = useState(false);
+  const [uploadingCtFile, setUploadingCtFile] = useState(false);
+
   useEffect(() => {
     fetchCourseDetails();
   }, [courseId]);
@@ -70,6 +79,19 @@ const CourseBuilder = () => {
         setQuizTitle('Course Final Assessment');
         setQuizPassingScore(70);
         setQuizQuestions([]);
+      }
+
+      // Initialize coding task editor
+      const ct = res.data.codingTask || null;
+      setCodingTask(ct);
+      if (ct) {
+        setCtTitle(ct.title);
+        setCtDesc(ct.description);
+        setCtStarterCodeUrl(ct.starterCodeUrl || '');
+      } else {
+        setCtTitle('Final Coding Project');
+        setCtDesc('');
+        setCtStarterCodeUrl('');
       }
     } catch (err) {
       console.error(err);
@@ -358,6 +380,81 @@ const CourseBuilder = () => {
     }
   };
 
+  // ==========================================
+  // CODING TASK ACTIONS
+  // ==========================================
+  const handleCtFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      alert('File size exceeds the 50MB limit.');
+      return;
+    }
+
+    setUploadingCtFile(true);
+    setError('');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setCtStarterCodeUrl(res.data.url);
+      showNotification('Starter code uploaded successfully!');
+    } catch (err) {
+      console.error('File upload failed:', err);
+      setError(err.response?.data?.message || 'Failed to upload starter code.');
+    } finally {
+      setUploadingCtFile(false);
+    }
+  };
+
+  const handleSaveCodingTask = async (e) => {
+    e.preventDefault();
+    if (!ctTitle || !ctDesc) {
+      setError('Please provide a title and description for the coding task.');
+      return;
+    }
+
+    setCtSaving(true);
+    setError('');
+
+    try {
+      await api.post(`/api/courses/${courseId}/coding-task`, {
+        title: ctTitle,
+        description: ctDesc,
+        starterCodeUrl: ctStarterCodeUrl
+      });
+      showNotification('Coding task saved successfully!');
+      fetchCourseDetails();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to save coding task.');
+    } finally {
+      setCtSaving(false);
+    }
+  };
+
+  const handleDeleteCodingTask = async () => {
+    if (!codingTask?._id) return;
+    if (!window.confirm('Are you sure you want to delete this coding task?')) return;
+    
+    try {
+      await api.delete(`/api/courses/${courseId}/coding-task`);
+      showNotification('Coding task deleted.');
+      setCodingTask(null);
+      setCtTitle('Final Coding Project');
+      setCtDesc('');
+      setCtStarterCodeUrl('');
+    } catch (err) {
+      console.error(err);
+      setError('Failed to delete coding task.');
+    }
+  };
+
   if (loading) {
     return (
       <div class="p-8 flex justify-center items-center h-full">
@@ -371,6 +468,7 @@ const CourseBuilder = () => {
       case 'video': return <Video class="h-4 w-4" />;
       case 'pdf': return <FileText class="h-4 w-4" />;
       case 'link': return <LinkIcon class="h-4 w-4" />;
+      case 'task': return <Check class="h-4 w-4 text-indigo-500" />;
       default: return <AlignLeft class="h-4 w-4" />;
     }
   };
@@ -435,6 +533,14 @@ const CourseBuilder = () => {
           }`}
         >
           Quiz Assessment {quiz ? '✓' : '(None)'}
+        </button>
+        <button
+          onClick={() => setActiveTab('coding-task')}
+          class={`pb-2.5 text-xs font-bold tracking-wide transition border-b-2 ${
+            activeTab === 'coding-task' ? 'border-indigo-500 text-indigo-650' : 'border-transparent text-slate-455 hover:text-slate-700'
+          }`}
+        >
+          Coding Task {codingTask ? '✓' : '(None)'}
         </button>
       </div>
 
@@ -515,7 +621,8 @@ const CourseBuilder = () => {
                         modType === 'video' ? 'Paste Video Embed/Stream URL or Upload file...' :
                         modType === 'pdf' ? 'Paste Document URL or Upload file...' :
                         modType === 'link' ? 'Paste Web Link...' :
-                        'Enter Rich Text/Markdown content...'
+                        modType === 'task' ? 'Enter task prompt and instructions...' :
+                        'Enter Rich Text/Lecture content...'
                       }
                       value={modContent}
                       onChange={(e) => setModContent(e.target.value)}
@@ -536,6 +643,7 @@ const CourseBuilder = () => {
                       <option value="pdf">PDF Document</option>
                       <option value="link">Web Resource Link</option>
                       <option value="text">Rich Text/Lecture</option>
+                      <option value="task">GitHub Task Submission</option>
                     </select>
                   </div>
 
@@ -806,6 +914,100 @@ const CourseBuilder = () => {
                 <Save class="h-4.5 w-4.5" />
               )}
               <span>Save Quiz Assessment</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: CODING TASK */}
+      {activeTab === 'coding-task' && (
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+          <div class="flex items-center justify-between mb-8">
+            <h2 class="text-xl font-black text-slate-800 tracking-tight flex items-center space-x-2">
+              <FileCode class="h-6 w-6 text-indigo-500" />
+              <span>Coding Task</span>
+            </h2>
+            {codingTask && (
+              <button
+                onClick={handleDeleteCodingTask}
+                class="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition"
+              >
+                <Trash2 class="h-4 w-4" />
+                <span>Delete Task</span>
+              </button>
+            )}
+          </div>
+
+          <div class="space-y-6">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+                Task Title
+              </label>
+              <input
+                type="text"
+                value={ctTitle}
+                onChange={(e) => setCtTitle(e.target.value)}
+                placeholder="e.g. Final React Project"
+                class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+                Task Description & Instructions
+              </label>
+              <textarea
+                value={ctDesc}
+                onChange={(e) => setCtDesc(e.target.value)}
+                rows={6}
+                placeholder="Explain the requirements for this coding task..."
+                class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+                Starter Code (Optional)
+              </label>
+              <div class="flex items-center space-x-3">
+                <input
+                  type="text"
+                  value={ctStarterCodeUrl}
+                  onChange={(e) => setCtStarterCodeUrl(e.target.value)}
+                  placeholder="Paste URL to zip file or upload..."
+                  class="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.onchange = handleCtFileUpload;
+                    input.click();
+                  }}
+                  disabled={uploadingCtFile}
+                  class="flex items-center space-x-1.5 px-4 py-3 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
+                >
+                  {uploadingCtFile ? <Loader2 class="h-4 w-4 animate-spin" /> : <Upload class="h-4 w-4 text-slate-400" />}
+                  <span>Upload Zip</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Save Action */}
+          <div class="flex items-center justify-end pt-5 border-t border-slate-100 mt-8">
+            <button
+              onClick={handleSaveCodingTask}
+              disabled={ctSaving}
+              class="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm transition disabled:opacity-50"
+            >
+              {ctSaving ? (
+                <Loader2 class="h-4.5 w-4.5 animate-spin" />
+              ) : (
+                <Save class="h-4.5 w-4.5" />
+              )}
+              <span>Save Coding Task</span>
             </button>
           </div>
         </div>

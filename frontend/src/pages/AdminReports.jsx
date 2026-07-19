@@ -14,6 +14,7 @@ import {
 const AdminReports = () => {
   const [progressData, setProgressData] = useState([]);
   const [quizAttempts, setQuizAttempts] = useState([]);
+  const [codingTasks, setCodingTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -33,13 +34,15 @@ const AdminReports = () => {
     setLoading(true);
     setError('');
     try {
-      const [progRes, quizRes] = await Promise.all([
+      const [progRes, quizRes, ctRes] = await Promise.all([
         api.get('/api/reports/progress'),
-        api.get('/api/reports/quiz-attempts')
+        api.get('/api/reports/quiz-attempts'),
+        api.get('/api/reports/coding-tasks')
       ]);
 
       setProgressData(progRes.data);
       setQuizAttempts(quizRes.data);
+      setCodingTasks(ctRes.data);
     } catch (err) {
       console.error(err);
       setError('Failed to fetch reporting logs.');
@@ -82,6 +85,33 @@ const AdminReports = () => {
 
     return matchesSearch && matchesDept && matchesStatus;
   });
+
+  // Filter calculations for Coding Tasks
+  const filteredCodingTasks = codingTasks.filter(item => {
+    const matchesSearch = 
+      item.employeeName.toLowerCase().includes(search.toLowerCase()) ||
+      item.employeeEmail.toLowerCase().includes(search.toLowerCase()) ||
+      item.courseTitle.toLowerCase().includes(search.toLowerCase());
+      
+    const matchesDept = deptFilter === 'All' || item.department === deptFilter;
+    const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
+
+    return matchesSearch && matchesDept && matchesStatus;
+  });
+
+  const handleUpdateCtStatus = async (progressId, newStatus, feedback) => {
+    try {
+      const res = await api.post(`/api/reports/coding-tasks/${progressId}/feedback`, { status: newStatus, feedback });
+      setCodingTasks(codingTasks.map(ct => 
+        ct.progressId === progressId 
+          ? { ...ct, status: res.data.codingTaskSubmission.status, feedback: res.data.codingTaskSubmission.feedback }
+          : ct
+      ));
+    } catch (error) {
+      console.error(error);
+      alert('Failed to save feedback');
+    }
+  };
 
   if (loading) {
     return (
@@ -138,6 +168,17 @@ const AdminReports = () => {
         >
           Quiz Exam Logs
         </button>
+        <button
+          onClick={() => {
+            setActiveReportTab('coding-tasks');
+            setStatusFilter('All');
+          }}
+          class={`pb-2.5 text-xs font-bold tracking-wide transition border-b-2 ${
+            activeReportTab === 'coding-tasks' ? 'border-indigo-500 text-indigo-650' : 'border-transparent text-slate-455 hover:text-slate-700'
+          }`}
+        >
+          Coding Task Submissions
+        </button>
       </div>
 
       {/* Filter Control Box */}
@@ -183,10 +224,16 @@ const AdminReports = () => {
                   <option value="in-progress">In Progress</option>
                   <option value="completed">Completed</option>
                 </>
-              ) : (
+              ) : activeReportTab === 'quizzes' ? (
                 <>
                   <option value="completed">Passed Quiz</option>
                   <option value="assigned">Failed Quiz</option>
+                </>
+              ) : (
+                <>
+                  <option value="pending">Pending Review</option>
+                  <option value="working">Working (Passed)</option>
+                  <option value="not-working">Not Working (Failed)</option>
                 </>
               )}
             </select>
@@ -244,6 +291,11 @@ const AdminReports = () => {
                         }`}>
                           {p.status}
                         </span>
+                        {p.percentage === 100 && p.status === 'in-progress' && (
+                          <div class="text-[9px] text-amber-600 font-bold mt-1.5">
+                            (Awaiting Review/Quiz)
+                          </div>
+                        )}
                         {p.completedDate && (
                           <div class="text-[9px] text-slate-450 mt-1">
                             Done: {new Date(p.completedDate).toLocaleDateString()}
@@ -256,7 +308,7 @@ const AdminReports = () => {
               </table>
             </div>
           )
-        ) : (
+        ) : activeReportTab === 'quizzes' ? (
           /* =======================================
              QUIZ REPORT GRID
              ======================================= */
@@ -308,6 +360,85 @@ const AdminReports = () => {
                             </>
                           )}
                         </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : (
+          /* =======================================
+             CODING TASKS GRID
+             ======================================= */
+          filteredCodingTasks.length === 0 ? (
+            <p class="text-center py-12 text-slate-400 text-xs font-medium">No coding tasks found.</p>
+          ) : (
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-650">
+                <thead>
+                  <tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                    <th class="pb-3 font-extrabold">Employee</th>
+                    <th class="pb-3 font-extrabold">Course Title</th>
+                    <th class="pb-3 font-extrabold">GitHub Link</th>
+                    <th class="pb-3 font-extrabold">Status & Feedback</th>
+                    <th class="pb-3 font-extrabold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100/60 font-medium">
+                  {filteredCodingTasks.map((ct) => (
+                    <tr key={ct.progressId} class="hover:bg-slate-50/50 transition duration-75">
+                      <td class="py-4 align-top">
+                        <div class="font-bold text-slate-700">{ct.employeeName}</div>
+                        <div class="text-[10px] text-slate-450 leading-tight font-semibold mt-0.5">{ct.employeeEmail}</div>
+                      </td>
+                      <td class="py-4 font-semibold text-slate-750 align-top">{ct.courseTitle}</td>
+                      <td class="py-4 align-top">
+                        <a href={ct.githubLink} target="_blank" rel="noreferrer" class="text-indigo-600 hover:text-indigo-800 underline break-all font-semibold">
+                          {ct.githubLink}
+                        </a>
+                        {ct.employeeMessage && (
+                          <div class="mt-2 text-[10px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100 border-l-2 border-l-indigo-300 italic">
+                            Employee note: "{ct.employeeMessage}"
+                          </div>
+                        )}
+                        <div class="text-[9px] text-slate-400 mt-1">
+                          {new Date(ct.submittedAt).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td class="py-4 align-top">
+                        <span class={`text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md ${
+                          ct.status === 'working' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                          ct.status === 'not-working' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                          'bg-amber-50 text-amber-600 border border-amber-100'
+                        }`}>
+                          {ct.status === 'working' ? 'Passed' : ct.status === 'not-working' ? 'Failed' : 'Pending'}
+                        </span>
+                        {ct.feedback && (
+                          <div class="mt-2 text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100 italic">
+                            "{ct.feedback}"
+                          </div>
+                        )}
+                      </td>
+                      <td class="py-4 align-top text-right min-w-[160px]">
+                        <div class="flex flex-col space-y-2 items-end">
+                          <select
+                            class="text-xs border border-slate-200 rounded-md p-1 focus:outline-none"
+                            onChange={(e) => {
+                              const fb = prompt('Provide feedback for this submission:', ct.feedback);
+                              if (fb !== null) {
+                                handleUpdateCtStatus(ct.progressId, e.target.value, fb);
+                              } else {
+                                e.target.value = ct.status; // reset if cancelled
+                              }
+                            }}
+                            value={ct.status}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="working">Pass (Working)</option>
+                            <option value="not-working">Fail (Not Working)</option>
+                          </select>
+                        </div>
                       </td>
                     </tr>
                   ))}

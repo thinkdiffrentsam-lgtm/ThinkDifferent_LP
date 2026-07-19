@@ -12,10 +12,14 @@ import {
   HelpCircle,
   Award,
   Play,
-  ExternalLink,
   ChevronRight,
   Loader2,
-  Clock
+  Clock,
+  Github,
+  FileCode,
+  Upload,
+  Download,
+  ExternalLink
 } from 'lucide-react';
 
 const CoursePlayer = () => {
@@ -23,6 +27,7 @@ const CoursePlayer = () => {
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
   const [quiz, setQuiz] = useState(null);
+  const [codingTask, setCodingTask] = useState(null);
   const [progress, setProgress] = useState({ completedModules: [], status: 'not-started', percentage: 0 });
   const [quizAttempts, setQuizAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +44,16 @@ const CoursePlayer = () => {
   const [quizResult, setQuizResult] = useState(null);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
 
+  // Task submission state
+  const [githubLink, setGithubLink] = useState('');
+  const [submittingTask, setSubmittingTask] = useState(false);
+
+  // Coding task submission state
+  const [ctGithubLink, setCtGithubLink] = useState('');
+  const [ctEmployeeMessage, setCtEmployeeMessage] = useState('');
+  const [submittingCt, setSubmittingCt] = useState(false);
+  const [isResubmitting, setIsResubmitting] = useState(false);
+
   useEffect(() => {
     fetchPlayerDetails();
   }, [courseId]);
@@ -49,14 +64,21 @@ const CoursePlayer = () => {
       setCourse(res.data.course);
       setModules(res.data.modules);
       setQuiz(res.data.quiz);
+      setCodingTask(res.data.codingTask);
       setProgress(res.data.progress);
       setQuizAttempts(res.data.quizAttempts);
 
       // Set initial item to play (either first incomplete module or first module overall)
-      if (res.data.modules.length > 0 && !activeItem) {
-        const completedIds = res.data.progress?.completedModules || [];
-        const firstIncomplete = res.data.modules.find(m => !completedIds.includes(m._id));
-        setActiveItem(firstIncomplete || res.data.modules[0]);
+      if (!activeItem) {
+        if (res.data.modules.length > 0) {
+          const completedIds = res.data.progress?.completedModules || [];
+          const firstIncomplete = res.data.modules.find(m => !completedIds.includes(m._id));
+          setActiveItem(firstIncomplete || res.data.modules[0]);
+        } else if (res.data.quiz) {
+          setActiveItem('quiz');
+        } else if (res.data.codingTask) {
+          setActiveItem('coding-task');
+        }
       }
     } catch (err) {
       console.error(err);
@@ -125,6 +147,90 @@ const CoursePlayer = () => {
     }
   };
 
+  // Submit Task Github Link
+  const handleSubmitTask = async (e) => {
+    e.preventDefault();
+    if (!githubLink) {
+      showModuleFeedback('Please enter a valid GitHub repository URL.');
+      return;
+    }
+
+    setSubmittingTask(true);
+    try {
+      const res = await api.post(`/api/employee/courses/${courseId}/modules/${activeItem._id}/submit-task`, {
+        githubLink
+      });
+      
+      setProgress({
+        ...progress,
+        completedModules: res.data.completedModules,
+        taskSubmissions: res.data.taskSubmissions,
+        percentage: res.data.percentage,
+        status: res.data.status
+      });
+
+      showModuleFeedback(res.data.message || 'Task submitted successfully!');
+    } catch (err) {
+      console.error(err);
+      showModuleFeedback('Failed to submit task link.');
+    } finally {
+      setSubmittingTask(false);
+    }
+  };
+
+  const handleSubmitCodingTask = async (e) => {
+    e.preventDefault();
+    if (!ctGithubLink) {
+      showModuleFeedback('Please provide your GitHub repository link first.');
+      return;
+    }
+
+    setSubmittingCt(true);
+    try {
+      const res = await api.post(`/api/employee/courses/${courseId}/submit-coding-task`, {
+        githubLink: ctGithubLink,
+        employeeMessage: ctEmployeeMessage
+      });
+      
+      setProgress({
+        ...progress,
+        codingTaskSubmission: {
+          githubLink: ctGithubLink,
+          employeeMessage: ctEmployeeMessage,
+          submittedAt: new Date().toISOString(),
+          status: 'pending',
+          feedback: ''
+        },
+        status: res.data.status // assuming backend might update status
+      });
+      setIsResubmitting(false);
+
+      showModuleFeedback('Coding task submitted successfully!');
+    } catch (err) {
+      console.error(err);
+      showModuleFeedback('Failed to submit coding task.');
+    } finally {
+      setSubmittingCt(false);
+    }
+  };
+
+  const handleDeleteCodingTask = async () => {
+    if (!confirm('Are you sure you want to delete your submission?')) return;
+    
+    try {
+      await api.delete(`/api/employee/courses/${courseId}/coding-task`);
+      const newProgress = { ...progress };
+      delete newProgress.codingTaskSubmission;
+      setProgress(newProgress);
+      setCtGithubLink('');
+      setCtEmployeeMessage('');
+      showModuleFeedback('Coding task submission deleted.');
+    } catch (err) {
+      console.error(err);
+      showModuleFeedback('Failed to delete coding task submission.');
+    }
+  };
+
   const selectAnswer = (qIndex, optionIndex) => {
     setQuizAnswers({
       ...quizAnswers,
@@ -133,17 +239,25 @@ const CoursePlayer = () => {
   };
 
   const handleNextItem = () => {
-    if (activeItem === 'quiz') return;
+    if (activeItem === 'coding-task') return;
 
-    const currentIndex = modules.findIndex(m => m._id === activeItem._id);
-    if (currentIndex < modules.length - 1) {
+    if (activeItem === 'quiz') {
+      if (codingTask) {
+        setActiveItem('coding-task');
+      }
+      return;
+    }
+
+    const currentIndex = modules.findIndex(m => m?._id === activeItem?._id);
+    if (currentIndex >= 0 && currentIndex < modules.length - 1) {
       // Go to next module
       setActiveItem(modules[currentIndex + 1]);
     } else if (quiz) {
-      // Go to quiz
       setActiveItem('quiz');
       setQuizResult(null);
       setQuizAnswers({});
+    } else if (codingTask) {
+      setActiveItem('coding-task');
     }
   };
 
@@ -160,6 +274,7 @@ const CoursePlayer = () => {
       case 'video': return <Video class="h-4 w-4" />;
       case 'pdf': return <FileText class="h-4 w-4" />;
       case 'link': return <LinkIcon class="h-4 w-4" />;
+      case 'task': return <Github class="h-4 w-4" />;
       default: return <AlignLeft class="h-4 w-4" />;
     }
   };
@@ -310,6 +425,55 @@ const CoursePlayer = () => {
               </div>
             );
           })()}
+
+          {/* Coding Task node in sidebar */}
+          {codingTask && (() => {
+            const allModulesCompleted = modules.every(m => isCompleted(m._id));
+            const ctSubmitted = !!progress.codingTaskSubmission?.fileUrl;
+
+            return (
+              <div class="pt-3 border-t border-slate-100 mt-3 space-y-1 pb-4">
+                <div class="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Project</div>
+                
+                <button
+                  onClick={() => {
+                    if (!allModulesCompleted) {
+                      showModuleFeedback('Please complete all learning materials before attempting the coding task.');
+                      return;
+                    }
+                    setActiveItem('coding-task');
+                  }}
+                  disabled={!allModulesCompleted}
+                  class={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition ${
+                    !allModulesCompleted
+                      ? 'opacity-60 cursor-not-allowed bg-slate-50 border-transparent'
+                      : activeItem === 'coding-task' 
+                        ? 'bg-indigo-50/70 border-indigo-100/85 text-indigo-655 font-semibold cursor-pointer' 
+                        : 'bg-transparent border-transparent hover:bg-slate-50 text-slate-650 hover:text-slate-850 cursor-pointer'
+                  }`}
+                >
+                  <div class="flex items-center space-x-3 min-w-0 pr-2">
+                    <div class={`p-1.5 rounded-lg border shrink-0 ${!allModulesCompleted ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-indigo-50 text-indigo-600 border-indigo-100/60'}`}>
+                      <FileCode class="h-4 w-4" />
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold truncate">{codingTask.title}</div>
+                      <div class="text-[9px] text-slate-550 font-semibold mt-0.5">
+                        {!allModulesCompleted ? (
+                           <span class="text-rose-500 font-bold">Locked</span>
+                        ) : ctSubmitted ? (
+                          <span class="text-emerald-600 font-bold">Submitted</span>
+                        ) : (
+                          <span>Required</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight class="h-4 w-4 text-slate-350 shrink-0" />
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -325,7 +489,7 @@ const CoursePlayer = () => {
 
         {/* Viewport Content */}
         <div class="p-6 lg:p-8 flex-1 overflow-y-auto max-w-4xl w-full mx-auto space-y-6">
-          {activeItem !== 'quiz' && activeItem ? (
+          {activeItem !== 'quiz' && activeItem !== 'coding-task' && activeItem ? (
             /* =======================================
                MODULE VIEWPORT VIEW
                ======================================= */
@@ -339,18 +503,20 @@ const CoursePlayer = () => {
                   <h1 class="text-xl font-extrabold text-slate-800 leading-tight">{activeItem.title}</h1>
                 </div>
 
-                <button
-                  onClick={() => handleToggleComplete(activeItem._id)}
-                  disabled={togglingModuleId === activeItem._id}
-                  class={`flex items-center space-x-1.5 text-xs font-bold px-4 py-2 rounded-xl border transition ${
-                    isCompleted(activeItem._id)
-                      ? 'bg-emerald-50 text-emerald-650 border-emerald-100/60'
-                      : 'bg-indigo-500 hover:bg-indigo-600 text-white border-transparent shadow shadow-indigo-500/10'
-                  }`}
-                >
-                  <CheckCircle2 class="h-4 w-4 shrink-0" />
-                  <span>{isCompleted(activeItem._id) ? 'Completed ✓' : 'Mark Completed'}</span>
-                </button>
+                {activeItem.type !== 'task' && (
+                  <button
+                    onClick={() => handleToggleComplete(activeItem._id)}
+                    disabled={togglingModuleId === activeItem._id}
+                    class={`flex items-center space-x-1.5 text-xs font-bold px-4 py-2 rounded-xl border transition ${
+                      isCompleted(activeItem._id)
+                        ? 'bg-emerald-50 text-emerald-650 border-emerald-100/60'
+                        : 'bg-indigo-500 hover:bg-indigo-600 text-white border-transparent shadow shadow-indigo-500/10'
+                    }`}
+                  >
+                    <CheckCircle2 class="h-4 w-4 shrink-0" />
+                    <span>{isCompleted(activeItem._id) ? 'Completed ✓' : 'Mark Completed'}</span>
+                  </button>
+                )}
               </div>
 
               {/* Module Description */}
@@ -456,6 +622,59 @@ const CoursePlayer = () => {
                     {activeItem.content}
                   </div>
                 )}
+
+                {activeItem.type === 'task' && (() => {
+                  const submission = progress.taskSubmissions?.find(sub => sub.moduleId === activeItem._id);
+                  return (
+                    <div class="p-4 space-y-6">
+                      <div class="prose max-w-none text-slate-650 text-xs font-semibold leading-relaxed whitespace-pre-wrap bg-slate-50 border border-slate-100 p-4 rounded-xl">
+                        {activeItem.content}
+                      </div>
+
+                      <div class="pt-4 border-t border-slate-100">
+                        {submission ? (
+                          <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-xl space-y-2">
+                            <div class="flex items-center space-x-2 text-emerald-650 font-bold text-xs">
+                              <CheckCircle2 class="h-5 w-5" />
+                              <span>Task Submitted Successfully</span>
+                            </div>
+                            <div class="text-[10px] text-emerald-600 font-semibold pl-7">
+                              Submitted Link: <a href={submission.githubLink} target="_blank" rel="noreferrer" class="underline hover:text-emerald-700">{submission.githubLink}</a>
+                            </div>
+                            <div class="text-[9px] text-emerald-500 font-bold uppercase tracking-wider pl-7">
+                              Submitted at {new Date(submission.submittedAt).toLocaleString()}
+                            </div>
+                          </div>
+                        ) : (
+                          <form onSubmit={handleSubmitTask} class="space-y-4">
+                            <div>
+                              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your GitHub Repository Link</label>
+                              <input
+                                type="url"
+                                required
+                                placeholder="https://github.com/username/repo"
+                                value={githubLink}
+                                onChange={(e) => setGithubLink(e.target.value)}
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition"
+                              />
+                            </div>
+                            <div class="flex justify-end">
+                              <button
+                                type="submit"
+                                disabled={submittingTask}
+                                class="flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow shadow-indigo-500/10 transition disabled:opacity-50"
+                              >
+                                {submittingTask && <Loader2 class="h-4 w-4 animate-spin" />}
+                                <Github class="h-4 w-4" />
+                                <span>Submit Task</span>
+                              </button>
+                            </div>
+                          </form>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Navigation buttons */}
@@ -463,7 +682,12 @@ const CoursePlayer = () => {
                 <span></span>
                 <button
                   onClick={handleNextItem}
-                  disabled={activeItem === 'quiz' || modules[modules.length - 1]._id === activeItem._id && !quiz}
+                  disabled={
+                    activeItem === 'coding-task' ||
+                    (activeItem === 'quiz' && !codingTask) ||
+                    (activeItem !== 'quiz' && activeItem !== 'coding-task' && modules.length > 0 && modules[modules.length - 1]._id === activeItem?._id && !quiz && !codingTask) ||
+                    (modules.length === 0 && !quiz && !codingTask)
+                  }
                   class="flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-550 transition disabled:opacity-30 disabled:pointer-events-none"
                 >
                   <span>Next Lesson</span>
@@ -471,7 +695,7 @@ const CoursePlayer = () => {
                 </button>
               </div>
             </div>
-          ) : (
+          ) : activeItem === 'quiz' ? (
             /* =======================================
                QUIZ VIEWPORT VIEW
                ======================================= */
@@ -580,8 +804,170 @@ const CoursePlayer = () => {
                   </div>
                 </form>
               )}
+
+              {/* Navigation buttons */}
+              {codingTask && (
+                <div class="flex items-center justify-between border-t border-slate-200/60 pt-5 mt-4">
+                  <span></span>
+                  <button
+                    onClick={handleNextItem}
+                    class="flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-550 transition disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    <span>Next Lesson</span>
+                    <ChevronRight class="h-4.5 w-4.5" />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          ) : activeItem === 'coding-task' && codingTask ? (
+            /* =======================================
+               CODING TASK VIEWPORT VIEW
+               ======================================= */
+            <div class="space-y-6">
+              <div class="border-b border-slate-200/60 pb-4">
+                <span class="bg-indigo-50 text-indigo-600 text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-md border border-indigo-100 inline-block mb-1.5">
+                  Final Project
+                </span>
+                <h1 class="text-xl font-extrabold text-slate-800 leading-tight">{codingTask.title}</h1>
+              </div>
+              
+              <div class="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm space-y-6">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-700 mb-2">Instructions</h3>
+                  <div class="prose max-w-none text-slate-600 text-sm font-medium whitespace-pre-wrap">
+                    {codingTask.description}
+                  </div>
+                </div>
+
+                {codingTask.starterCodeUrl && (
+                  <div class="pt-4 border-t border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3">Starter Files</h3>
+                    <a
+                      href={codingTask.starterCodeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      class="inline-flex items-center space-x-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition"
+                    >
+                      <Download class="h-4 w-4 text-slate-500" />
+                      <span>Download Starter Code (ZIP)</span>
+                    </a>
+                  </div>
+                )}
+
+                <div class="pt-4 border-t border-slate-100">
+                  <h3 class="text-sm font-bold text-slate-700 mb-3">Your Submission</h3>
+                  {progress.codingTaskSubmission?.githubLink && !isResubmitting ? (
+                    <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-xl space-y-2">
+                      <div class="flex items-center space-x-2 text-emerald-650 font-bold text-sm">
+                        <CheckCircle2 class="h-5 w-5" />
+                        <span>Project Submitted Successfully</span>
+                      </div>
+                      <div class="text-[11px] text-emerald-600 font-semibold pl-7">
+                        Submitted Link: <a href={progress.codingTaskSubmission.githubLink} target="_blank" rel="noreferrer" class="underline hover:text-emerald-700">{progress.codingTaskSubmission.githubLink}</a>
+                      </div>
+                      <div class="text-[9px] text-emerald-500 font-bold uppercase tracking-wider pl-7">
+                        Submitted at {new Date(progress.codingTaskSubmission.submittedAt).toLocaleString()}
+                      </div>
+                      {progress.codingTaskSubmission.employeeMessage && (
+                        <div class="pl-7 mt-2">
+                          <p class="text-[11px] text-emerald-700 italic border-l-2 border-emerald-300 pl-2">
+                            "{progress.codingTaskSubmission.employeeMessage}"
+                          </p>
+                        </div>
+                      )}
+                      <div class="pl-7 pt-2">
+                        <div class="flex items-center space-x-2">
+                          <span class={`text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md ${
+                            progress.codingTaskSubmission.status === 'working' ? 'bg-emerald-100 text-emerald-700' :
+                            progress.codingTaskSubmission.status === 'not-working' ? 'bg-rose-100 text-rose-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {progress.codingTaskSubmission.status === 'working' ? 'Status: Passed' : progress.codingTaskSubmission.status === 'not-working' ? 'Status: Failed' : 'Status: Pending Review'}
+                          </span>
+                        </div>
+                        {progress.codingTaskSubmission.feedback && (
+                          <div class="mt-2 bg-white/60 p-3 rounded-lg border border-emerald-200/50">
+                            <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Admin Feedback</h4>
+                            <p class="text-xs text-slate-700 italic">"{progress.codingTaskSubmission.feedback}"</p>
+                          </div>
+                        )}
+                        {progress.codingTaskSubmission.status === 'not-working' && (
+                          <div class="mt-4 flex space-x-3">
+                            <button
+                              onClick={() => setIsResubmitting(true)}
+                              class="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
+                            >
+                              Resubmit Project
+                            </button>
+                            <button
+                              onClick={handleDeleteCodingTask}
+                              class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
+                            >
+                              Delete Submission
+                            </button>
+                          </div>
+                        )}
+                        {progress.codingTaskSubmission.status !== 'not-working' && (
+                          <div class="mt-4">
+                            <button
+                              onClick={handleDeleteCodingTask}
+                              class="bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
+                            >
+                              Delete Submission
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmitCodingTask} class="space-y-4">
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your GitHub Repository Link</label>
+                        <input
+                          type="url"
+                          required
+                          placeholder="https://github.com/username/repo"
+                          value={ctGithubLink}
+                          onChange={(e) => setCtGithubLink(e.target.value)}
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Message to Reviewer (Optional)</label>
+                        <textarea
+                          placeholder="Any instructions on how to run your code, or specific areas you want feedback on?"
+                          value={ctEmployeeMessage}
+                          onChange={(e) => setCtEmployeeMessage(e.target.value)}
+                          rows="3"
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition resize-none"
+                        ></textarea>
+                      </div>
+                      <div class="flex justify-end pt-2 space-x-2">
+                        {isResubmitting && (
+                          <button
+                            type="button"
+                            onClick={() => setIsResubmitting(false)}
+                            class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-6 py-3 rounded-xl transition"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={submittingCt || !ctGithubLink}
+                          class="flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-md shadow-indigo-500/10 transition disabled:opacity-50"
+                        >
+                          {submittingCt && <Loader2 class="h-4 w-4 animate-spin" />}
+                          <Github class="h-4 w-4" />
+                          <span>Submit Project</span>
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
