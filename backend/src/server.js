@@ -1,6 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const compression = require('compression');
 const connectDB = require('./utils/db');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
@@ -8,6 +13,29 @@ const path = require('path');
 
 // Initialize app
 const app = express();
+
+// Security and Performance Middlewares
+app.use(helmet());
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" })); // To allow accessing uploaded static files
+
+// Logging
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { message: 'Too many requests from this IP, please try again after 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Compress response bodies
+app.use(compression());
 
 // Middleware
 // Configure CORS
