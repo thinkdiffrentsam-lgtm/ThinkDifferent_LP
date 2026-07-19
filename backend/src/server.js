@@ -41,9 +41,12 @@ app.use(compression());
 // Middleware
 // Configure CORS
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*', // Specify your Vercel URL in environment variables
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true, // Allow cookies if needed
+  origin: function (origin, callback) {
+    // Echo the exact origin to satisfy CORS with credentials
+    callback(null, origin || '*');
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  credentials: true, // Allow cookies/authorization headers
 };
 app.use(cors(corsOptions));
 app.use(express.json());
