@@ -13,6 +13,7 @@ const path = require('path');
 
 // Initialize app
 const app = express();
+app.set('trust proxy', 1); // Trust the first proxy (required for Render)
 
 // Security and Performance Middlewares
 app.use(helmet());
