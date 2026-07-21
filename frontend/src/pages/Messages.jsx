@@ -7,7 +7,7 @@ import { io } from 'socket.io-client';
 import { format, isToday, isYesterday } from 'date-fns';
 import { Send, User as UserIcon, Search, MessageSquare, Paperclip, FileText, Image as ImageIcon, Loader2, Download, Trash2 } from 'lucide-react';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.PROD ? 'https://thinkdifferent-lp-2.onrender.com' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
 const Messages = () => {
   const { user } = useContext(AuthContext);
