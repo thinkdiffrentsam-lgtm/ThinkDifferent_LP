@@ -9,12 +9,12 @@ const User = require('../models/User');
 router.get('/contacts', protect, async (req, res) => {
   try {
     const currentUserId = req.user._id;
-    const currentUserRole = req.user.role;
+    const currentUserRole = (req.user.role || '').toLowerCase();
 
     // Filter target users based on user role
     const filter = { _id: { $ne: currentUserId } };
     if (currentUserRole === 'employee') {
-      filter.role = 'admin';
+      filter.role = { $regex: /^admin$/i }; // case-insensitive match for admin
     }
 
     const users = await User.find(filter).select('-password -__v');
@@ -64,7 +64,7 @@ router.get('/contacts', protect, async (req, res) => {
 router.get('/:userId', protect, async (req, res) => {
   try {
     const currentUserId = req.user._id;
-    const currentUserRole = req.user.role;
+    const currentUserRole = (req.user.role || '').toLowerCase();
     const otherUserId = req.params.userId;
 
     const otherUser = await User.findById(otherUserId);
@@ -72,8 +72,10 @@ router.get('/:userId', protect, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const isTargetAdmin = (otherUser.role || '').toLowerCase() === 'admin';
+
     // Restriction check: Employees can only message admins
-    if (currentUserRole === 'employee' && otherUser.role !== 'admin') {
+    if (currentUserRole === 'employee' && !isTargetAdmin) {
       return res.status(403).json({ message: 'Employees can only send messages to administrators.' });
     }
 
@@ -91,11 +93,49 @@ router.get('/:userId', protect, async (req, res) => {
   }
 });
 
+// Send a message (HTTP fallback endpoint)
+router.post('/', protect, async (req, res) => {
+  try {
+    const sender = req.user._id;
+    const senderRole = (req.user.role || '').toLowerCase();
+    const { receiver, content, fileUrl, fileName } = req.body;
+
+    if (!receiver || (!content && !fileUrl)) {
+      return res.status(400).json({ message: 'Receiver and content/file are required.' });
+    }
+
+    const receiverUser = await User.findById(receiver);
+    if (!receiverUser) {
+      return res.status(404).json({ message: 'Receiver user not found' });
+    }
+
+    const isReceiverAdmin = (receiverUser.role || '').toLowerCase() === 'admin';
+
+    // Permission check: Employees can only send messages to admins
+    if (senderRole === 'employee' && !isReceiverAdmin) {
+      return res.status(403).json({ message: 'Employees can only send messages to administrators.' });
+    }
+
+    const message = await Message.create({
+      sender,
+      receiver,
+      content: content || '',
+      fileUrl: fileUrl || null,
+      fileName: fileName || null
+    });
+
+    res.status(201).json(message);
+  } catch (error) {
+    console.error('Error posting message:', error);
+    res.status(500).json({ message: 'Server error sending message' });
+  }
+});
+
 // Mark messages from a specific user as read
 router.put('/:userId/read', protect, async (req, res) => {
   try {
     const currentUserId = req.user._id;
-    const currentUserRole = req.user.role;
+    const currentUserRole = (req.user.role || '').toLowerCase();
     const otherUserId = req.params.userId;
 
     const otherUser = await User.findById(otherUserId);
@@ -103,8 +143,10 @@ router.put('/:userId/read', protect, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const isTargetAdmin = (otherUser.role || '').toLowerCase() === 'admin';
+
     // Restriction check: Employees can only message admins
-    if (currentUserRole === 'employee' && otherUser.role !== 'admin') {
+    if (currentUserRole === 'employee' && !isTargetAdmin) {
       return res.status(403).json({ message: 'Employees can only message administrators.' });
     }
 

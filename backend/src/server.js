@@ -112,7 +112,10 @@ io.on('connection', (socket) => {
         return;
       }
 
-      if (senderUser.role === 'employee' && receiverUser.role !== 'admin') {
+      const isSenderEmployee = (senderUser.role || '').toLowerCase() === 'employee';
+      const isReceiverAdmin = (receiverUser.role || '').toLowerCase() === 'admin';
+
+      if (isSenderEmployee && !isReceiverAdmin) {
         socket.emit('messagingError', { message: 'Employees can only send messages to administrators.' });
         return;
       }
