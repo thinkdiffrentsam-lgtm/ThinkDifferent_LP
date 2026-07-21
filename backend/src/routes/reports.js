@@ -195,33 +195,31 @@ router.post('/coding-tasks/:progressId/feedback', protect, admin, async (req, re
       return res.status(404).json({ message: 'Progress record not found' });
     }
     
+    if (!progress.codingTaskSubmission) {
+      progress.codingTaskSubmission = {};
+    }
+
     progress.codingTaskSubmission.status = status;
     progress.codingTaskSubmission.feedback = feedback;
     
     // If the admin marks it as working, check if the overall course should be completed
     if (progress.percentage === 100) {
-      const { Assignment, Quiz, QuizAttempt } = require('../models'); // might need to import these if not already imported
-      // wait, they are not imported at the top of reports.js! Let's just use mongoose.model
-      const AssignmentModel = require('../models/Assignment');
-      const QuizModel = require('../models/Quiz');
-      const QuizAttemptModel = require('../models/QuizAttempt');
-
-      const quiz = await QuizModel.findOne({ courseId: progress.courseId });
+      const quiz = await Quiz.findOne({ courseId: progress.courseId });
       let quizPassed = true;
       if (quiz) {
-        const passedQuiz = await QuizAttemptModel.findOne({ userId: progress.userId, quizId: quiz._id, passed: true });
+        const passedQuiz = await QuizAttempt.findOne({ userId: progress.userId, quizId: quiz._id, passed: true });
         quizPassed = !!passedQuiz;
       }
 
       if (quizPassed && status === 'working') {
         progress.status = 'completed';
-        await AssignmentModel.findOneAndUpdate(
+        await Assignment.findOneAndUpdate(
           { userId: progress.userId, courseId: progress.courseId },
           { status: 'completed', completedDate: new Date() }
         );
       } else {
         progress.status = 'in-progress';
-        await AssignmentModel.findOneAndUpdate(
+        await Assignment.findOneAndUpdate(
           { userId: progress.userId, courseId: progress.courseId },
           { status: 'in-progress' }
         );
@@ -232,6 +230,7 @@ router.post('/coding-tasks/:progressId/feedback', protect, admin, async (req, re
     
     res.json({ message: 'Feedback saved successfully', codingTaskSubmission: progress.codingTaskSubmission });
   } catch (error) {
+    console.error('Error saving coding task feedback:', error);
     res.status(500).json({ message: 'Server error saving feedback', error: error.message });
   }
 });

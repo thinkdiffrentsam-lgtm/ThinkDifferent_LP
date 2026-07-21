@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const path = require('path');
-const { protect, admin } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 // Multer memory storage configuration
 const storage = multer.memoryStorage();
@@ -15,8 +16,8 @@ const upload = multer({
 
 // @desc    Upload file to S3 (fallback to local server disk storage if S3 details are missing)
 // @route   POST /api/upload
-// @access  Private/Admin
-router.post('/', protect, admin, upload.single('file'), async (req, res) => {
+// @access  Private
+router.post('/', protect, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -88,6 +89,71 @@ router.post('/', protect, admin, upload.single('file'), async (req, res) => {
     console.error('File upload error:', error);
     res.status(500).json({
       message: 'Failed to upload file',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Upload file to Cloudinary (used for chat attachments)
+// @route   POST /api/upload/chat
+// @access  Private
+router.post('/chat', protect, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
+    const useCloudinary = CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET;
+
+    if (useCloudinary) {
+      console.log('Cloudinary credentials found. Uploading chat attachment...');
+      cloudinary.config({ 
+        cloud_name: CLOUDINARY_CLOUD_NAME, 
+        api_key: CLOUDINARY_API_KEY, 
+        api_secret: CLOUDINARY_API_SECRET 
+      });
+
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+      
+      const cloudinaryRes = await cloudinary.uploader.upload(dataURI, {
+        resource_type: 'auto',
+        folder: 'lms_chat'
+      });
+      
+      return res.status(200).json({
+        message: 'File uploaded to Cloudinary successfully',
+        url: cloudinaryRes.secure_url,
+        storage: 'cloudinary',
+        filename: cloudinaryRes.original_filename || req.file.originalname
+      });
+    } else {
+      console.warn('Cloudinary credentials missing in .env. Falling back to local disk storage...');
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const filename = `${Date.now()}_chat_${req.file.originalname.replace(/\s+/g, '_')}`;
+      const destinationPath = path.join(uploadsDir, filename);
+
+      await fs.promises.writeFile(destinationPath, req.file.buffer);
+
+      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+
+      return res.status(200).json({
+        message: 'File uploaded to local disk storage successfully (Cloudinary fallback)',
+        url: fileUrl,
+        storage: 'local',
+        filename: filename
+      });
+    }
+  } catch (error) {
+    console.error('Chat upload error:', error);
+    res.status(500).json({
+      message: 'Failed to upload chat attachment',
       error: error.message
     });
   }

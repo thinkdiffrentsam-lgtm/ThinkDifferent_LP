@@ -30,6 +30,24 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: 'Staff Member'
   },
+  profilePicture: {
+    type: String,
+    default: ''
+  },
+  preferences: {
+    notificationsEnabled: {
+      type: Boolean,
+      default: true
+    }
+  },
+  resetPasswordOtp: {
+    type: String,
+    default: null
+  },
+  resetPasswordOtpExpires: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

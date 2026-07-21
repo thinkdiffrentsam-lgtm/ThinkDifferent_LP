@@ -10,6 +10,9 @@ const connectDB = require('./utils/db');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
+const Message = require('./models/Message');
 
 // Initialize app
 const app = express();
@@ -25,7 +28,7 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // Rate Limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 1000 : 10000, // High limit for active testing and development
   message: { message: 'Too many requests from this IP, please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -52,6 +55,96 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Initialize HTTP server and Socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: corsOptions
+});
+
+// In-memory tracking of online users (userId -> Set of socketIds)
+const onlineUsersMap = new Map();
+
+// Socket.io connection logic
+io.on('connection', (socket) => {
+  // Join a room based on the user's ID and register user online
+  socket.on('join', (userId) => {
+    if (!userId) return;
+    socket.userId = userId;
+    socket.join(userId);
+
+    if (!onlineUsersMap.has(userId)) {
+      onlineUsersMap.set(userId, new Set());
+    }
+    onlineUsersMap.get(userId).add(socket.id);
+
+    // Send active online users list to joined user
+    socket.emit('getOnlineUsers', Array.from(onlineUsersMap.keys()));
+
+    // Broadcast user online status to all clients
+    io.emit('userStatus', { userId, isOnline: true });
+  });
+
+  socket.on('disconnect', () => {
+    if (socket.userId && onlineUsersMap.has(socket.userId)) {
+      const userSockets = onlineUsersMap.get(socket.userId);
+      userSockets.delete(socket.id);
+      
+      if (userSockets.size === 0) {
+        onlineUsersMap.delete(socket.userId);
+        // Broadcast user offline status to all clients
+        io.emit('userStatus', { userId: socket.userId, isOnline: false });
+      }
+    }
+  });
+
+  socket.on('sendMessage', async (data) => {
+    try {
+      const { sender, receiver, content, fileUrl, fileName } = data;
+
+      // Permission check: Employees can only send messages to admins
+      const [senderUser, receiverUser] = await Promise.all([
+        User.findById(sender),
+        User.findById(receiver)
+      ]);
+
+      if (!senderUser || !receiverUser) {
+        socket.emit('messagingError', { message: 'User not found' });
+        return;
+      }
+
+      if (senderUser.role === 'employee' && receiverUser.role !== 'admin') {
+        socket.emit('messagingError', { message: 'Employees can only send messages to administrators.' });
+        return;
+      }
+
+      const message = await Message.create({ sender, receiver, content, fileUrl, fileName });
+      
+      // Emit to receiver's room for instant delivery
+      io.to(receiver).emit('receiveMessage', message);
+      
+      // Emit back to sender to confirm delivery
+      socket.emit('messageSent', message);
+    } catch (err) {
+      console.error('Socket send message error:', err);
+    }
+  });
+
+  socket.on('deleteMessage', async (data) => {
+    try {
+      const { messageId, receiver } = data;
+      await Message.findByIdAndDelete(messageId);
+      
+      // Emit to receiver's room to delete it from their screen
+      io.to(receiver).emit('messageDeleted', messageId);
+      
+      // Emit back to sender
+      socket.emit('messageDeleted', messageId);
+    } catch (err) {
+      console.error('Socket delete message error:', err);
+    }
+  });
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/courses', require('./routes/courses'));
@@ -59,6 +152,7 @@ app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/employee', require('./routes/employee'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/messages', require('./routes/messages'));
 
 // Basic status route
 app.get('/', (req, res) => {
@@ -139,7 +233,7 @@ const startServer = async () => {
     console.error('Error seeding database:', seedErr.message);
   }
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 };
