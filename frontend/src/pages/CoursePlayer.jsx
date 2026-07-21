@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { toast } from 'react-hot-toast';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { 
@@ -124,7 +126,7 @@ const CoursePlayer = () => {
     for (let i = 0; i < quiz.questionsCount; i++) {
       const ans = quizAnswers[i];
       if (ans === undefined) {
-        alert(`Please select an answer for Question ${i + 1}.`);
+        toast.error(`Please select an answer for Question ${i + 1}.`);
         return;
       }
       answersArray.push(ans);
@@ -141,7 +143,7 @@ const CoursePlayer = () => {
       fetchPlayerDetails();
     } catch (err) {
       console.error(err);
-      alert('Failed to submit quiz.');
+      toast.error('Failed to submit quiz.');
     } finally {
       setSubmittingQuiz(false);
     }
@@ -215,7 +217,6 @@ const CoursePlayer = () => {
   };
 
   const handleDeleteCodingTask = async () => {
-    if (!confirm('Are you sure you want to delete your submission?')) return;
     
     try {
       await api.delete(`/api/employee/courses/${courseId}/coding-task`);
@@ -263,19 +264,19 @@ const CoursePlayer = () => {
 
   if (loading) {
     return (
-      <div class="p-8 flex justify-center items-center h-full">
-        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="p-8 flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
 
   const getModuleIcon = (type) => {
     switch (type) {
-      case 'video': return <Video class="h-4 w-4" />;
-      case 'pdf': return <FileText class="h-4 w-4" />;
-      case 'link': return <LinkIcon class="h-4 w-4" />;
-      case 'task': return <Github class="h-4 w-4" />;
-      default: return <AlignLeft class="h-4 w-4" />;
+      case 'video': return <Video className="h-4 w-4" />;
+      case 'pdf': return <FileText className="h-4 w-4" />;
+      case 'link': return <LinkIcon className="h-4 w-4" />;
+      case 'task': return <Github className="h-4 w-4" />;
+      default: return <AlignLeft className="h-4 w-4" />;
     }
   };
 
@@ -285,40 +286,40 @@ const CoursePlayer = () => {
     : null;
 
   return (
-    <div class="min-h-[calc(100vh-73px)] flex flex-col lg:flex-row bg-slate-50">
+    <div className="min-h-[calc(100vh-73px)] flex flex-col lg:flex-row bg-slate-50">
       
       {/* 1. Left Sidebar: Course outline list */}
-      <div class="w-full lg:w-80 border-r border-slate-200/80 bg-white shrink-0 flex flex-col">
+      <div className="w-full lg:w-80 border-r border-slate-200/80 bg-white shrink-0 flex flex-col">
         {/* Course info card */}
-        <div class="p-4 border-b border-slate-100 space-y-3">
-          <Link to="/employee/my-courses" class="text-xs text-slate-450 hover:text-indigo-650 flex items-center space-x-1 transition font-bold">
-            <ArrowLeft class="h-3.5 w-3.5" />
+        <div className="p-4 border-b border-slate-100 space-y-3">
+          <Link to="/employee/my-courses" className="text-xs text-slate-450 hover:text-indigo-650 flex items-center space-x-1 transition font-bold">
+            <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to My Learning</span>
           </Link>
           <div>
-            <h2 class="text-xs font-extrabold text-slate-850 line-clamp-1">{course?.title}</h2>
-            <div class="flex items-center space-x-2 mt-1">
-              <span class="text-[9px] font-extrabold text-indigo-650 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100/50">
+            <h2 className="text-xs font-extrabold text-slate-850 line-clamp-1">{course?.title}</h2>
+            <div className="flex items-center space-x-2 mt-1">
+              <span className="text-[9px] font-extrabold text-indigo-650 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100/50">
                 {progress.percentage}% Done
               </span>
-              <span class="text-[10px] text-slate-450 font-bold">&bull; {modules.length} lessons</span>
+              <span className="text-[10px] text-slate-450 font-bold">&bull; {modules.length} lessons</span>
             </div>
           </div>
           {/* Progress bar */}
-          <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
             <div 
-              class="bg-indigo-500 h-full rounded-full transition-all"
+              className="bg-indigo-500 h-full rounded-full transition-all"
               style={{ width: `${progress.percentage}%` }}
             ></div>
           </div>
           
           {progress.status === 'completed' && (
-            <div class="pt-2">
+            <div className="pt-2">
               <Link 
                 to={`/employee/courses/${courseId}/certificate`} 
-                class="w-full flex items-center justify-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-650 border border-indigo-200 text-xs font-bold py-2 rounded-xl transition shadow-sm"
+                className="w-full flex items-center justify-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-650 border border-indigo-200 text-xs font-bold py-2 rounded-xl transition shadow-sm"
               >
-                <Award class="h-4 w-4" />
+                <Award className="h-4 w-4" />
                 <span>View Certificate</span>
               </Link>
             </div>
@@ -326,8 +327,8 @@ const CoursePlayer = () => {
         </div>
 
         {/* Lessons checklist list */}
-        <div class="flex-1 overflow-y-auto p-3 space-y-1.5 max-h-[300px] lg:max-h-none">
-          <div class="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Lesson Outline</div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-1.5 max-h-[300px] lg:max-h-none">
+          <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Lesson Outline</div>
           
           {modules.map((mod, index) => {
             const active = activeItem !== 'quiz' && activeItem?._id === mod._id;
@@ -343,7 +344,7 @@ const CoursePlayer = () => {
                 }`}
                 onClick={() => setActiveItem(mod)}
               >
-                <div class="flex items-center space-x-3 min-w-0 pr-2">
+                <div className="flex items-center space-x-3 min-w-0 pr-2">
                   <button
                     type="button"
                     disabled={togglingModuleId === mod._id}
@@ -351,26 +352,26 @@ const CoursePlayer = () => {
                       e.stopPropagation();
                       handleToggleComplete(mod._id);
                     }}
-                    class="text-slate-400 hover:text-indigo-600 transition"
+                    className="text-slate-400 hover:text-indigo-600 transition"
                   >
                     {completed ? (
-                      <CheckCircle2 class="h-5 w-5 text-emerald-500 shrink-0" />
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
                     ) : (
-                      <Circle class="h-5 w-5 text-slate-300 shrink-0" />
+                      <Circle className="h-5 w-5 text-slate-300 shrink-0" />
                     )}
                   </button>
-                  <div class="min-w-0">
-                    <div class="text-xs font-bold truncate">
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold truncate">
                       {index + 1}. {mod.title}
                     </div>
-                    <div class="flex items-center space-x-1.5 text-[9px] text-slate-450 font-bold mt-0.5 uppercase tracking-wide">
+                    <div className="flex items-center space-x-1.5 text-[9px] text-slate-450 font-bold mt-0.5 uppercase tracking-wide">
                       {getModuleIcon(mod.type)}
                       <span>{mod.type}</span>
                       {mod.duration > 0 && <span>&bull; {mod.duration} min</span>}
                     </div>
                   </div>
                 </div>
-                <ChevronRight class="h-4 w-4 text-slate-350 shrink-0" />
+                <ChevronRight className="h-4 w-4 text-slate-350 shrink-0" />
               </div>
             );
           })}
@@ -379,8 +380,8 @@ const CoursePlayer = () => {
           {quiz && (() => {
             const allModulesCompleted = modules.every(m => isCompleted(m._id));
             return (
-              <div class="pt-3 border-t border-slate-100 mt-3 space-y-1">
-                <div class="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Assessment</div>
+              <div className="pt-3 border-t border-slate-100 mt-3 space-y-1">
+                <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Assessment</div>
                 
                 <button
                   onClick={() => {
@@ -401,15 +402,15 @@ const CoursePlayer = () => {
                         : 'bg-transparent border-transparent hover:bg-slate-50 text-slate-650 hover:text-slate-850 cursor-pointer'
                   }`}
                 >
-                  <div class="flex items-center space-x-3 min-w-0">
+                  <div className="flex items-center space-x-3 min-w-0">
                     <div class={`p-1.5 rounded-lg border shrink-0 ${!allModulesCompleted ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-indigo-50 text-indigo-600 border-indigo-100/60'}`}>
-                      <HelpCircle class="h-4 w-4" />
+                      <HelpCircle className="h-4 w-4" />
                     </div>
                     <div>
-                      <div class="text-xs font-bold">{quiz.title}</div>
-                      <div class="text-[9px] text-slate-550 font-semibold mt-0.5">
+                      <div className="text-xs font-bold">{quiz.title}</div>
+                      <div className="text-[9px] text-slate-550 font-semibold mt-0.5">
                         {!allModulesCompleted ? (
-                           <span class="text-rose-500 font-bold">Locked - Complete modules first</span>
+                           <span className="text-rose-500 font-bold">Locked - Complete modules first</span>
                         ) : bestAttempt ? (
                           <span class={bestAttempt.passed ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>
                             Best: {bestAttempt.score}% ({bestAttempt.passed ? 'Passed' : 'Failed'})
@@ -420,7 +421,7 @@ const CoursePlayer = () => {
                       </div>
                     </div>
                   </div>
-                  <ChevronRight class="h-4 w-4 text-slate-350 shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-slate-350 shrink-0" />
                 </button>
               </div>
             );
@@ -432,8 +433,8 @@ const CoursePlayer = () => {
             const ctSubmitted = !!progress.codingTaskSubmission?.fileUrl;
 
             return (
-              <div class="pt-3 border-t border-slate-100 mt-3 space-y-1 pb-4">
-                <div class="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Project</div>
+              <div className="pt-3 border-t border-slate-100 mt-3 space-y-1 pb-4">
+                <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Project</div>
                 
                 <button
                   onClick={() => {
@@ -452,24 +453,24 @@ const CoursePlayer = () => {
                         : 'bg-transparent border-transparent hover:bg-slate-50 text-slate-650 hover:text-slate-850 cursor-pointer'
                   }`}
                 >
-                  <div class="flex items-center space-x-3 min-w-0 pr-2">
+                  <div className="flex items-center space-x-3 min-w-0 pr-2">
                     <div class={`p-1.5 rounded-lg border shrink-0 ${!allModulesCompleted ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-indigo-50 text-indigo-600 border-indigo-100/60'}`}>
-                      <FileCode class="h-4 w-4" />
+                      <FileCode className="h-4 w-4" />
                     </div>
-                    <div class="min-w-0">
-                      <div class="text-xs font-bold truncate">{codingTask.title}</div>
-                      <div class="text-[9px] text-slate-550 font-semibold mt-0.5">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold truncate">{codingTask.title}</div>
+                      <div className="text-[9px] text-slate-550 font-semibold mt-0.5">
                         {!allModulesCompleted ? (
-                           <span class="text-rose-500 font-bold">Locked</span>
+                           <span className="text-rose-500 font-bold">Locked</span>
                         ) : ctSubmitted ? (
-                          <span class="text-emerald-600 font-bold">Submitted</span>
+                          <span className="text-emerald-600 font-bold">Submitted</span>
                         ) : (
                           <span>Required</span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <ChevronRight class="h-4 w-4 text-slate-350 shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-slate-350 shrink-0" />
                 </button>
               </div>
             );
@@ -478,29 +479,29 @@ const CoursePlayer = () => {
       </div>
 
       {/* 2. Right Main viewport area */}
-      <div class="flex-1 bg-[#fafafc] flex flex-col justify-between">
+      <div className="flex-1 bg-[#fafafc] flex flex-col justify-between">
         
         {/* Toggle feedback bar */}
         {feedbackText && (
-          <div class="bg-white border-b border-emerald-100 text-emerald-600 text-xs px-6 py-2 flex items-center justify-between font-semibold shadow-sm">
+          <div className="bg-white border-b border-emerald-100 text-emerald-600 text-xs px-6 py-2 flex items-center justify-between font-semibold shadow-sm">
             <span>{feedbackText}</span>
           </div>
         )}
 
         {/* Viewport Content */}
-        <div class="p-6 lg:p-8 flex-1 overflow-y-auto max-w-4xl w-full mx-auto space-y-6">
+        <div className="p-6 lg:p-8 flex-1 overflow-y-auto max-w-4xl w-full mx-auto space-y-6">
           {activeItem !== 'quiz' && activeItem !== 'coding-task' && activeItem ? (
             /* =======================================
                MODULE VIEWPORT VIEW
                ======================================= */
-            <div class="space-y-6">
+            <div className="space-y-6">
               {/* Module header details */}
-              <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200/60 pb-4 gap-2">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200/60 pb-4 gap-2">
                 <div>
-                  <span class="bg-indigo-50 text-indigo-600 text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-md border border-indigo-100 inline-block mb-1.5">
+                  <span className="bg-indigo-50 text-indigo-600 text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-md border border-indigo-100 inline-block mb-1.5">
                     {activeItem.type} lesson
                   </span>
-                  <h1 class="text-xl font-extrabold text-slate-800 leading-tight">{activeItem.title}</h1>
+                  <h1 className="text-xl font-extrabold text-slate-800 leading-tight">{activeItem.title}</h1>
                 </div>
 
                 {activeItem.type !== 'task' && (
@@ -513,7 +514,7 @@ const CoursePlayer = () => {
                         : 'bg-indigo-500 hover:bg-indigo-600 text-white border-transparent shadow shadow-indigo-500/10'
                     }`}
                   >
-                    <CheckCircle2 class="h-4 w-4 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
                     <span>{isCompleted(activeItem._id) ? 'Completed ✓' : 'Mark Completed'}</span>
                   </button>
                 )}
@@ -521,13 +522,13 @@ const CoursePlayer = () => {
 
               {/* Module Description */}
               {activeItem.description && (
-                <p class="text-slate-500 text-sm italic font-medium">{activeItem.description}</p>
+                <p className="text-slate-500 text-sm italic font-medium">{activeItem.description}</p>
               )}
 
               {/* Media viewer panels */}
-              <div class="bg-white border border-slate-150 rounded-2xl overflow-hidden shadow-sm shadow-slate-100/50 p-5">
+              <div className="bg-white border border-slate-150 rounded-2xl overflow-hidden shadow-sm shadow-slate-100/50 p-5">
                 {activeItem.type === 'video' && (
-                  <div class="space-y-4">
+                  <div className="space-y-4">
                     {/* Render embed if stream URL is a Youtube string, else render native video player */}
                     {activeItem.content.includes('youtube.com') || activeItem.content.includes('youtu.be') ? (
                       (() => {
@@ -535,90 +536,90 @@ const CoursePlayer = () => {
                         const videoId = (match && match[2].length === 11) ? match[2] : null;
                         const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : activeItem.content;
                         return (
-                          <div class="aspect-video w-full rounded-xl overflow-hidden bg-black border border-slate-205">
+                          <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-slate-205">
                             <iframe
                               src={embedUrl}
                               title={activeItem.title}
-                              class="w-full h-full"
+                              className="w-full h-full"
                               allowFullScreen
                             ></iframe>
                           </div>
                         );
                       })()
                     ) : (
-                      <div class="aspect-video w-full rounded-xl bg-black border border-slate-200 relative overflow-hidden group">
+                      <div className="aspect-video w-full rounded-xl bg-black border border-slate-200 relative overflow-hidden group">
                         <video 
                           src={activeItem.content} 
                           controls 
-                          class="w-full h-full object-contain"
+                          className="w-full h-full object-contain"
                         >
                           Your browser does not support the video tag.
                         </video>
                       </div>
                     )}
                     
-                    <div class="flex items-center justify-between text-xs text-slate-450 border-t border-slate-100 pt-3.5 font-bold">
-                      <span class="flex items-center">
-                        <Clock class="h-4 w-4 mr-1.5 text-indigo-500" />
+                    <div className="flex items-center justify-between text-xs text-slate-450 border-t border-slate-100 pt-3.5 font-bold">
+                      <span className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1.5 text-indigo-500" />
                         Duration: {activeItem.duration || 'N/A'} minutes
                       </span>
                       <a
                         href={activeItem.content}
                         target="_blank"
                         rel="noreferrer"
-                        class="text-indigo-600 hover:text-indigo-500 font-bold flex items-center space-x-1"
+                        className="text-indigo-600 hover:text-indigo-500 font-bold flex items-center space-x-1"
                       >
                         <span>Open source video link</span>
-                        <ExternalLink class="h-3.5 w-3.5" />
+                        <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </div>
                   </div>
                 )}
 
                 {activeItem.type === 'pdf' && (
-                  <div class="flex flex-col items-center text-center p-8 space-y-4">
-                    <div class="bg-rose-50 text-rose-600 p-4 rounded-full border border-rose-100">
-                      <FileText class="h-8 w-8" />
+                  <div className="flex flex-col items-center text-center p-8 space-y-4">
+                    <div className="bg-rose-50 text-rose-600 p-4 rounded-full border border-rose-100">
+                      <FileText className="h-8 w-8" />
                     </div>
                     <div>
-                      <h3 class="font-bold text-slate-800 text-sm">PDF Study Material</h3>
-                      <p class="text-xs text-slate-500 mt-1 max-w-sm font-medium">Download the PDF document study sheet or open it in a separate tab to continue readings.</p>
+                      <h3 className="font-bold text-slate-800 text-sm">PDF Study Material</h3>
+                      <p className="text-xs text-slate-500 mt-1 max-w-sm font-medium">Download the PDF document study sheet or open it in a separate tab to continue readings.</p>
                     </div>
                     <a
                       href={activeItem.content}
                       target="_blank"
                       rel="noreferrer"
-                      class="bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow shadow-indigo-500/10 transition flex items-center space-x-2"
+                      className="bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow shadow-indigo-500/10 transition flex items-center space-x-2"
                     >
                       <span>Open Document PDF</span>
-                      <ExternalLink class="h-3.5 w-3.5" />
+                      <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   </div>
                 )}
 
                 {activeItem.type === 'link' && (
-                  <div class="flex flex-col items-center text-center p-8 space-y-4">
-                    <div class="bg-indigo-50 text-indigo-600 p-4 rounded-full border border-indigo-100">
-                      <LinkIcon class="h-8 w-8" />
+                  <div className="flex flex-col items-center text-center p-8 space-y-4">
+                    <div className="bg-indigo-50 text-indigo-600 p-4 rounded-full border border-indigo-100">
+                      <LinkIcon className="h-8 w-8" />
                     </div>
                     <div>
-                      <h3 class="font-bold text-slate-800 text-sm">External Web Resource</h3>
-                      <p class="text-xs text-slate-500 mt-1 max-w-sm font-medium">This module links to an external web page. Click below to view the resource and return here to complete.</p>
+                      <h3 className="font-bold text-slate-800 text-sm">External Web Resource</h3>
+                      <p className="text-xs text-slate-500 mt-1 max-w-sm font-medium">This module links to an external web page. Click below to view the resource and return here to complete.</p>
                     </div>
                     <a
                       href={activeItem.content}
                       target="_blank"
                       rel="noreferrer"
-                      class="bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow shadow-indigo-500/10 transition flex items-center space-x-2"
+                      className="bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow shadow-indigo-500/10 transition flex items-center space-x-2"
                     >
                       <span>Launch External Resource</span>
-                      <ExternalLink class="h-3.5 w-3.5" />
+                      <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   </div>
                 )}
 
                 {activeItem.type === 'text' && (
-                  <div class="prose max-w-none text-slate-650 text-xs font-semibold leading-relaxed p-2 whitespace-pre-wrap">
+                  <div className="prose max-w-none text-slate-650 text-xs font-semibold leading-relaxed p-2 whitespace-pre-wrap">
                     {activeItem.content}
                   </div>
                 )}
@@ -626,46 +627,46 @@ const CoursePlayer = () => {
                 {activeItem.type === 'task' && (() => {
                   const submission = progress.taskSubmissions?.find(sub => sub.moduleId === activeItem._id);
                   return (
-                    <div class="p-4 space-y-6">
-                      <div class="prose max-w-none text-slate-650 text-xs font-semibold leading-relaxed whitespace-pre-wrap bg-slate-50 border border-slate-100 p-4 rounded-xl">
+                    <div className="p-4 space-y-6">
+                      <div className="prose max-w-none text-slate-650 text-xs font-semibold leading-relaxed whitespace-pre-wrap bg-slate-50 border border-slate-100 p-4 rounded-xl">
                         {activeItem.content}
                       </div>
 
-                      <div class="pt-4 border-t border-slate-100">
+                      <div className="pt-4 border-t border-slate-100">
                         {submission ? (
-                          <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-xl space-y-2">
-                            <div class="flex items-center space-x-2 text-emerald-650 font-bold text-xs">
-                              <CheckCircle2 class="h-5 w-5" />
+                          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl space-y-2">
+                            <div className="flex items-center space-x-2 text-emerald-650 font-bold text-xs">
+                              <CheckCircle2 className="h-5 w-5" />
                               <span>Task Submitted Successfully</span>
                             </div>
-                            <div class="text-[10px] text-emerald-600 font-semibold pl-7">
-                              Submitted Link: <a href={submission.githubLink} target="_blank" rel="noreferrer" class="underline hover:text-emerald-700">{submission.githubLink}</a>
+                            <div className="text-[10px] text-emerald-600 font-semibold pl-7">
+                              Submitted Link: <a href={submission.githubLink} target="_blank" rel="noreferrer" className="underline hover:text-emerald-700">{submission.githubLink}</a>
                             </div>
-                            <div class="text-[9px] text-emerald-500 font-bold uppercase tracking-wider pl-7">
+                            <div className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider pl-7">
                               Submitted at {new Date(submission.submittedAt).toLocaleString()}
                             </div>
                           </div>
                         ) : (
-                          <form onSubmit={handleSubmitTask} class="space-y-4">
+                          <form onSubmit={handleSubmitTask} className="space-y-4">
                             <div>
-                              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your GitHub Repository Link</label>
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your GitHub Repository Link</label>
                               <input
                                 type="url"
                                 required
                                 placeholder="https://github.com/username/repo"
                                 value={githubLink}
                                 onChange={(e) => setGithubLink(e.target.value)}
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition"
                               />
                             </div>
-                            <div class="flex justify-end">
+                            <div className="flex justify-end">
                               <button
                                 type="submit"
                                 disabled={submittingTask}
-                                class="flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow shadow-indigo-500/10 transition disabled:opacity-50"
+                                className="flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow shadow-indigo-500/10 transition disabled:opacity-50"
                               >
-                                {submittingTask && <Loader2 class="h-4 w-4 animate-spin" />}
-                                <Github class="h-4 w-4" />
+                                {submittingTask && <Loader2 className="h-4 w-4 animate-spin" />}
+                                <Github className="h-4 w-4" />
                                 <span>Submit Task</span>
                               </button>
                             </div>
@@ -678,7 +679,7 @@ const CoursePlayer = () => {
               </div>
 
               {/* Navigation buttons */}
-              <div class="flex items-center justify-between border-t border-slate-200/60 pt-5 mt-4">
+              <div className="flex items-center justify-between border-t border-slate-200/60 pt-5 mt-4">
                 <span></span>
                 <button
                   onClick={handleNextItem}
@@ -688,10 +689,10 @@ const CoursePlayer = () => {
                     (activeItem !== 'quiz' && activeItem !== 'coding-task' && modules.length > 0 && modules[modules.length - 1]._id === activeItem?._id && !quiz && !codingTask) ||
                     (modules.length === 0 && !quiz && !codingTask)
                   }
-                  class="flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-550 transition disabled:opacity-30 disabled:pointer-events-none"
+                  className="flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-550 transition disabled:opacity-30 disabled:pointer-events-none"
                 >
                   <span>Next Lesson</span>
-                  <ChevronRight class="h-4.5 w-4.5" />
+                  <ChevronRight className="h-4.5 w-4.5" />
                 </button>
               </div>
             </div>
@@ -699,38 +700,38 @@ const CoursePlayer = () => {
             /* =======================================
                QUIZ VIEWPORT VIEW
                ======================================= */
-            <div class="space-y-6">
-              <div class="border-b border-slate-200/60 pb-4">
-                <h1 class="text-xl font-extrabold text-slate-800 leading-tight">{quiz?.title}</h1>
-                <p class="text-xs text-slate-500 mt-1 font-medium">
-                  Answer the following questions. You must score at least <span class="font-semibold text-indigo-600">{quiz?.passingScore}%</span> to pass.
+            <div className="space-y-6">
+              <div className="border-b border-slate-200/60 pb-4">
+                <h1 className="text-xl font-extrabold text-slate-800 leading-tight">{quiz?.title}</h1>
+                <p className="text-xs text-slate-500 mt-1 font-medium">
+                  Answer the following questions. You must score at least <span className="font-semibold text-indigo-600">{quiz?.passingScore}%</span> to pass.
                 </p>
               </div>
 
               {/* If quiz result exists, render results block, else render form */}
               {quizResult ? (
-                <div class="bg-white border border-slate-100 p-6 rounded-2xl space-y-6 shadow-sm shadow-slate-100/50">
-                  <div class="flex flex-col items-center text-center p-4 space-y-3">
+                <div className="bg-white border border-slate-100 p-6 rounded-2xl space-y-6 shadow-sm shadow-slate-100/50">
+                  <div className="flex flex-col items-center text-center p-4 space-y-3">
                     <div class={`p-3.5 rounded-full border ${
                       quizResult.passed 
                         ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
                         : 'bg-rose-50 text-rose-600 border-rose-100'
                     }`}>
-                      <Award class="h-8 w-8" />
+                      <Award className="h-8 w-8" />
                     </div>
                     <div>
-                      <h2 class="text-base font-bold text-slate-850">
+                      <h2 className="text-base font-bold text-slate-850">
                         {quizResult.passed ? 'Congratulations, you passed!' : 'Assessment Failed'}
                       </h2>
-                      <p class="text-xs text-slate-500 mt-1 font-medium">
-                        You scored <span class="font-bold text-slate-700">{quizResult.score}%</span> on this exam. (Requires {quizResult.passingScore}%)
+                      <p className="text-xs text-slate-500 mt-1 font-medium">
+                        You scored <span className="font-bold text-slate-700">{quizResult.score}%</span> on this exam. (Requires {quizResult.passingScore}%)
                       </p>
                     </div>
 
                     {!quizResult.passed && (
                       <button
                         onClick={() => setQuizResult(null)}
-                        class="bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-4 py-2 rounded-xl transition"
+                        className="bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-4 py-2 rounded-xl transition"
                       >
                         Retake Exam
                       </button>
@@ -738,21 +739,21 @@ const CoursePlayer = () => {
                   </div>
 
                   {/* Score details breakdown */}
-                  <div class="border-t border-slate-100 pt-5 space-y-4">
-                    <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider">Questions Review</h3>
-                    <div class="space-y-3">
+                  <div className="border-t border-slate-100 pt-5 space-y-4">
+                    <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">Questions Review</h3>
+                    <div className="space-y-3">
                       {quizResult.questions.map((q, idx) => (
-                        <div key={idx} class="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2 font-semibold">
-                          <div class="flex items-start justify-between text-xs gap-2">
-                            <span class="font-bold text-slate-700">{idx + 1}. {q.questionText}</span>
+                        <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2 font-semibold">
+                          <div className="flex items-start justify-between text-xs gap-2">
+                            <span className="font-bold text-slate-700">{idx + 1}. {q.questionText}</span>
                             <span class={`text-[9px] font-extrabold uppercase shrink-0 ${q.isCorrect ? 'text-emerald-600' : 'text-rose-600'}`}>
                               {q.isCorrect ? 'Correct ✓' : 'Incorrect ✗'}
                             </span>
                           </div>
                           
-                          <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-500 mt-2 font-medium">
-                            <div>Your Answer: <span class="text-slate-700 font-semibold">{q.options[q.userAnswer] || 'None'}</span></div>
-                            <div>Correct Answer: <span class="text-emerald-605 font-bold">{q.options[q.correctAnswer]}</span></div>
+                          <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 mt-2 font-medium">
+                            <div>Your Answer: <span className="text-slate-700 font-semibold">{q.options[q.userAnswer] || 'None'}</span></div>
+                            <div>Correct Answer: <span className="text-emerald-605 font-bold">{q.options[q.correctAnswer]}</span></div>
                           </div>
                         </div>
                       ))}
@@ -760,17 +761,17 @@ const CoursePlayer = () => {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmitQuiz} class="space-y-5">
+                <form onSubmit={handleSubmitQuiz} className="space-y-5">
                   {quiz?.questions.map((q, qIndex) => (
-                    <div key={q._id} class="bg-white border border-slate-100 p-5 rounded-2xl space-y-3.5 shadow-sm shadow-slate-100/40">
-                      <div class="text-xs font-bold text-slate-800 flex items-start space-x-2">
-                        <span class="bg-indigo-50 text-indigo-600 border border-indigo-100/50 text-[9px] uppercase font-extrabold tracking-wide px-2 py-0.5 rounded mr-1 inline-block shrink-0 mt-0.5">
+                    <div key={q._id} className="bg-white border border-slate-100 p-5 rounded-2xl space-y-3.5 shadow-sm shadow-slate-100/40">
+                      <div className="text-xs font-bold text-slate-800 flex items-start space-x-2">
+                        <span className="bg-indigo-50 text-indigo-600 border border-indigo-100/50 text-[9px] uppercase font-extrabold tracking-wide px-2 py-0.5 rounded mr-1 inline-block shrink-0 mt-0.5">
                           Q{qIndex + 1}
                         </span>
                         <span>{q.questionText}</span>
                       </div>
 
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
                         {q.options.map((opt, oIndex) => {
                           const selected = quizAnswers[qIndex] === oIndex;
                           return (
@@ -792,13 +793,13 @@ const CoursePlayer = () => {
                     </div>
                   ))}
 
-                  <div class="flex items-center justify-end pt-3">
+                  <div className="flex items-center justify-end pt-3">
                     <button
                       type="submit"
                       disabled={submittingQuiz}
-                      class="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-650 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md shadow-indigo-500/10 transition disabled:opacity-50"
+                      className="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-650 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md shadow-indigo-500/10 transition disabled:opacity-50"
                     >
-                      {submittingQuiz && <Loader2 class="h-4 w-4 animate-spin" />}
+                      {submittingQuiz && <Loader2 className="h-4 w-4 animate-spin" />}
                       <span>Submit Exam Answers</span>
                     </button>
                   </div>
@@ -807,14 +808,14 @@ const CoursePlayer = () => {
 
               {/* Navigation buttons */}
               {codingTask && (
-                <div class="flex items-center justify-between border-t border-slate-200/60 pt-5 mt-4">
+                <div className="flex items-center justify-between border-t border-slate-200/60 pt-5 mt-4">
                   <span></span>
                   <button
                     onClick={handleNextItem}
-                    class="flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-550 transition disabled:opacity-30 disabled:pointer-events-none"
+                    className="flex items-center space-x-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-550 transition disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <span>Next Lesson</span>
-                    <ChevronRight class="h-4.5 w-4.5" />
+                    <ChevronRight className="h-4.5 w-4.5" />
                   </button>
                 </div>
               )}
@@ -823,60 +824,60 @@ const CoursePlayer = () => {
             /* =======================================
                CODING TASK VIEWPORT VIEW
                ======================================= */
-            <div class="space-y-6">
-              <div class="border-b border-slate-200/60 pb-4">
-                <span class="bg-indigo-50 text-indigo-600 text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-md border border-indigo-100 inline-block mb-1.5">
+            <div className="space-y-6">
+              <div className="border-b border-slate-200/60 pb-4">
+                <span className="bg-indigo-50 text-indigo-600 text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-md border border-indigo-100 inline-block mb-1.5">
                   Final Project
                 </span>
-                <h1 class="text-xl font-extrabold text-slate-800 leading-tight">{codingTask.title}</h1>
+                <h1 className="text-xl font-extrabold text-slate-800 leading-tight">{codingTask.title}</h1>
               </div>
               
-              <div class="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm space-y-6">
+              <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm space-y-6">
                 <div>
-                  <h3 class="text-sm font-bold text-slate-700 mb-2">Instructions</h3>
-                  <div class="prose max-w-none text-slate-600 text-sm font-medium whitespace-pre-wrap">
+                  <h3 className="text-sm font-bold text-slate-700 mb-2">Instructions</h3>
+                  <div className="prose max-w-none text-slate-600 text-sm font-medium whitespace-pre-wrap">
                     {codingTask.description}
                   </div>
                 </div>
 
                 {codingTask.starterCodeUrl && (
-                  <div class="pt-4 border-t border-slate-100">
-                    <h3 class="text-sm font-bold text-slate-700 mb-3">Starter Files</h3>
+                  <div className="pt-4 border-t border-slate-100">
+                    <h3 className="text-sm font-bold text-slate-700 mb-3">Starter Files</h3>
                     <a
                       href={codingTask.starterCodeUrl}
                       target="_blank"
                       rel="noreferrer"
-                      class="inline-flex items-center space-x-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition"
+                      className="inline-flex items-center space-x-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition"
                     >
-                      <Download class="h-4 w-4 text-slate-500" />
+                      <Download className="h-4 w-4 text-slate-500" />
                       <span>Download Starter Code (ZIP)</span>
                     </a>
                   </div>
                 )}
 
-                <div class="pt-4 border-t border-slate-100">
-                  <h3 class="text-sm font-bold text-slate-700 mb-3">Your Submission</h3>
+                <div className="pt-4 border-t border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-700 mb-3">Your Submission</h3>
                   {progress.codingTaskSubmission?.githubLink && !isResubmitting ? (
-                    <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-xl space-y-2">
-                      <div class="flex items-center space-x-2 text-emerald-650 font-bold text-sm">
-                        <CheckCircle2 class="h-5 w-5" />
+                    <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl space-y-2">
+                      <div className="flex items-center space-x-2 text-emerald-650 font-bold text-sm">
+                        <CheckCircle2 className="h-5 w-5" />
                         <span>Project Submitted Successfully</span>
                       </div>
-                      <div class="text-[11px] text-emerald-600 font-semibold pl-7">
-                        Submitted Link: <a href={progress.codingTaskSubmission.githubLink} target="_blank" rel="noreferrer" class="underline hover:text-emerald-700">{progress.codingTaskSubmission.githubLink}</a>
+                      <div className="text-[11px] text-emerald-600 font-semibold pl-7">
+                        Submitted Link: <a href={progress.codingTaskSubmission.githubLink} target="_blank" rel="noreferrer" className="underline hover:text-emerald-700">{progress.codingTaskSubmission.githubLink}</a>
                       </div>
-                      <div class="text-[9px] text-emerald-500 font-bold uppercase tracking-wider pl-7">
+                      <div className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider pl-7">
                         Submitted at {new Date(progress.codingTaskSubmission.submittedAt).toLocaleString()}
                       </div>
                       {progress.codingTaskSubmission.employeeMessage && (
-                        <div class="pl-7 mt-2">
-                          <p class="text-[11px] text-emerald-700 italic border-l-2 border-emerald-300 pl-2">
+                        <div className="pl-7 mt-2">
+                          <p className="text-[11px] text-emerald-700 italic border-l-2 border-emerald-300 pl-2">
                             "{progress.codingTaskSubmission.employeeMessage}"
                           </p>
                         </div>
                       )}
-                      <div class="pl-7 pt-2">
-                        <div class="flex items-center space-x-2">
+                      <div className="pl-7 pt-2">
+                        <div className="flex items-center space-x-2">
                           <span class={`text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md ${
                             progress.codingTaskSubmission.status === 'working' ? 'bg-emerald-100 text-emerald-700' :
                             progress.codingTaskSubmission.status === 'not-working' ? 'bg-rose-100 text-rose-700' :
@@ -886,32 +887,32 @@ const CoursePlayer = () => {
                           </span>
                         </div>
                         {progress.codingTaskSubmission.feedback && (
-                          <div class="mt-2 bg-white/60 p-3 rounded-lg border border-emerald-200/50">
-                            <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Admin Feedback</h4>
-                            <p class="text-xs text-slate-700 italic">"{progress.codingTaskSubmission.feedback}"</p>
+                          <div className="mt-2 bg-white/60 p-3 rounded-lg border border-emerald-200/50">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Admin Feedback</h4>
+                            <p className="text-xs text-slate-700 italic">"{progress.codingTaskSubmission.feedback}"</p>
                           </div>
                         )}
                         {progress.codingTaskSubmission.status === 'not-working' && (
-                          <div class="mt-4 flex space-x-3">
+                          <div className="mt-4 flex space-x-3">
                             <button
                               onClick={() => setIsResubmitting(true)}
-                              class="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
+                              className="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
                             >
                               Resubmit Project
                             </button>
                             <button
                               onClick={handleDeleteCodingTask}
-                              class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
+                              className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
                             >
                               Delete Submission
                             </button>
                           </div>
                         )}
                         {progress.codingTaskSubmission.status !== 'not-working' && (
-                          <div class="mt-4">
+                          <div className="mt-4">
                             <button
                               onClick={handleDeleteCodingTask}
-                              class="bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
+                              className="bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 font-bold text-xs px-4 py-2 rounded-lg transition shadow-sm"
                             >
                               Delete Submission
                             </button>
@@ -920,34 +921,34 @@ const CoursePlayer = () => {
                       </div>
                     </div>
                   ) : (
-                    <form onSubmit={handleSubmitCodingTask} class="space-y-4">
+                    <form onSubmit={handleSubmitCodingTask} className="space-y-4">
                       <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your GitHub Repository Link</label>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Your GitHub Repository Link</label>
                         <input
                           type="url"
                           required
                           placeholder="https://github.com/username/repo"
                           value={ctGithubLink}
                           onChange={(e) => setCtGithubLink(e.target.value)}
-                          class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition"
                         />
                       </div>
                       <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Message to Reviewer (Optional)</label>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Message to Reviewer (Optional)</label>
                         <textarea
                           placeholder="Any instructions on how to run your code, or specific areas you want feedback on?"
                           value={ctEmployeeMessage}
                           onChange={(e) => setCtEmployeeMessage(e.target.value)}
                           rows="3"
-                          class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition resize-none"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition resize-none"
                         ></textarea>
                       </div>
-                      <div class="flex justify-end pt-2 space-x-2">
+                      <div className="flex justify-end pt-2 space-x-2">
                         {isResubmitting && (
                           <button
                             type="button"
                             onClick={() => setIsResubmitting(false)}
-                            class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-6 py-3 rounded-xl transition"
+                            className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-6 py-3 rounded-xl transition"
                           >
                             Cancel
                           </button>
@@ -955,10 +956,10 @@ const CoursePlayer = () => {
                         <button
                           type="submit"
                           disabled={submittingCt || !ctGithubLink}
-                          class="flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-md shadow-indigo-500/10 transition disabled:opacity-50"
+                          className="flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-650 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-md shadow-indigo-500/10 transition disabled:opacity-50"
                         >
-                          {submittingCt && <Loader2 class="h-4 w-4 animate-spin" />}
-                          <Github class="h-4 w-4" />
+                          {submittingCt && <Loader2 className="h-4 w-4 animate-spin" />}
+                          <Github className="h-4 w-4" />
                           <span>Submit Project</span>
                         </button>
                       </div>

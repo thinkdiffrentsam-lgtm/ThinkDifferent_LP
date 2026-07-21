@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 
 // Components & Shared Layout
 import Navbar from './components/Navbar';
@@ -22,6 +23,8 @@ import EmployeeDashboard from './pages/EmployeeDashboard';
 import MyCourses from './pages/MyCourses';
 import CoursePlayer from './pages/CoursePlayer';
 import Certificate from './pages/Certificate';
+import ProfileSettings from './pages/ProfileSettings';
+import Messages from './pages/Messages';
 
 // Route Protection wrappers
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -29,8 +32,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (loading) {
     return (
-      <div class="min-h-screen bg-slate-50 flex justify-center items-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="min-h-screen bg-slate-50 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
@@ -51,11 +54,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 // Layout wrapper
 const Layout = ({ children }) => {
   return (
-    <div class="h-screen flex flex-col bg-[#fafafc] text-slate-800 overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#fafafc] text-slate-800 overflow-hidden transition-colors duration-200">
       <Navbar />
-      <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <Sidebar />
-        <main class="flex-1 overflow-y-auto bg-[#fafafc]">
+        <main className="flex-1 overflow-y-auto bg-[#fafafc]">
           {children}
         </main>
       </div>
@@ -128,6 +131,18 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
+      {/* Shared Protected Routes */}
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Layout><ProfileSettings /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <Layout><Messages /></Layout>
+        </ProtectedRoute>
+      } />
+
       {/* Fallback Redirections */}
       <Route path="*" element={
         <Navigate to={user ? (user.role === 'admin' ? '/admin' : '/employee') : '/login'} replace />
@@ -140,6 +155,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Toaster position="top-right" />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

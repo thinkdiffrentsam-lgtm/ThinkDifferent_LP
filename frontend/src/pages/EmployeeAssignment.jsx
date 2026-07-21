@@ -110,9 +110,6 @@ const EmployeeAssignment = () => {
   };
 
   const handleUnassign = async (assignmentId) => {
-    if (!window.confirm('Are you sure you want to unassign this course? The employee will lose access immediately.')) {
-      return;
-    }
 
     try {
       await api.delete(`/api/assignments/${assignmentId}`);
@@ -135,48 +132,48 @@ const EmployeeAssignment = () => {
 
   if (loading) {
     return (
-      <div class="p-8 flex justify-center items-center h-full">
-        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="p-8 flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
 
   return (
-    <div class="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 class="text-2xl font-extrabold tracking-tight text-slate-800">Course Assignments</h1>
-        <p class="text-slate-500 text-xs mt-0.5 font-medium">Enroll your staff members in training courses based on departments or individual lists.</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">Course Assignments</h1>
+        <p className="text-slate-500 text-xs mt-0.5 font-medium">Enroll your staff members in training courses based on departments or individual lists.</p>
       </div>
 
       {/* Alerts */}
       {success && (
-        <div class="bg-emerald-50 border border-emerald-100/80 text-emerald-600 px-4 py-3 rounded-xl flex items-center space-x-2 text-xs font-semibold">
-          <Check class="h-4 w-4 shrink-0" />
+        <div className="bg-emerald-50 border border-emerald-100/80 text-emerald-600 px-4 py-3 rounded-xl flex items-center space-x-2 text-xs font-semibold">
+          <Check className="h-4 w-4 shrink-0" />
           <span>{success}</span>
         </div>
       )}
       {error && (
-        <div class="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3 rounded-xl flex items-center space-x-2 text-xs font-semibold">
-          <AlertCircle class="h-4 w-4 shrink-0" />
+        <div className="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3 rounded-xl flex items-center space-x-2 text-xs font-semibold">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Assignment Setup grid */}
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Assignment panel form */}
-        <div class="bg-white border border-slate-100 p-5 rounded-2xl space-y-4 shadow-sm lg:col-span-1 shadow-slate-100/40">
-          <h2 class="text-sm font-extrabold text-slate-800 border-b border-slate-100 pb-2">New Enrollment</h2>
+        <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4 shadow-sm lg:col-span-1 shadow-slate-100/40">
+          <h2 className="text-sm font-extrabold text-slate-800 border-b border-slate-100 pb-2">New Enrollment</h2>
           
-          <form onSubmit={handleAssign} class="space-y-4">
+          <form onSubmit={handleAssign} className="space-y-4">
             {/* Course select */}
             <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Select Course</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Select Course</label>
               <select
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
               >
                 {courses.length === 0 ? (
                   <option value="">No published courses available</option>
@@ -190,8 +187,8 @@ const EmployeeAssignment = () => {
 
             {/* Target criteria */}
             <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Assignment Strategy</label>
-              <div class="grid grid-cols-2 gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Assignment Strategy</label>
+              <div className="grid grid-cols-2 gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
                 <button
                   type="button"
                   onClick={() => setAssignmentType('individual')}
@@ -220,11 +217,11 @@ const EmployeeAssignment = () => {
             {/* Strategy input */}
             {assignmentType === 'department' ? (
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Select Department</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Select Department</label>
                 <select
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
-                  class="w-full bg-slate-55 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full bg-slate-55 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white"
                 >
                   <option value="Engineering">Engineering</option>
                   <option value="HR">HR</option>
@@ -235,33 +232,33 @@ const EmployeeAssignment = () => {
               </div>
             ) : (
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Select Employees ({selectedEmployees.length})</label>
-                <div class="relative mb-2">
-                  <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Select Employees ({selectedEmployees.length})</label>
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Search employees..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-850 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-850 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                   />
                 </div>
                 
-                <div class="bg-slate-50/50 rounded-xl border border-slate-100 max-h-48 overflow-y-auto p-2 space-y-1.5 shadow-inner">
+                <div className="bg-slate-50/50 rounded-xl border border-slate-100 max-h-48 overflow-y-auto p-2 space-y-1.5 shadow-inner">
                   {filteredEmployees.length === 0 ? (
-                    <p class="text-xs text-slate-400 text-center py-4 font-medium">No employees match filters.</p>
+                    <p className="text-xs text-slate-400 text-center py-4 font-medium">No employees match filters.</p>
                   ) : (
                     filteredEmployees.map(emp => (
-                      <label key={emp._id} class="flex items-center space-x-2.5 p-1.5 hover:bg-white hover:shadow-sm rounded-lg cursor-pointer transition">
+                      <label key={emp._id} className="flex items-center space-x-2.5 p-1.5 hover:bg-white hover:shadow-sm rounded-lg cursor-pointer transition">
                         <input
                           type="checkbox"
                           checked={selectedEmployees.includes(emp._id)}
                           onChange={() => handleCheckboxChange(emp._id)}
-                          class="rounded text-indigo-650 bg-white border-slate-250 focus:ring-0 focus:ring-offset-0 h-4 w-4"
+                          className="rounded text-indigo-650 bg-white border-slate-250 focus:ring-0 focus:ring-offset-0 h-4 w-4"
                         />
-                        <div class="text-xs">
-                          <div class="font-bold text-slate-700">{emp.name}</div>
-                          <div class="text-[10px] text-slate-450 font-semibold">{emp.department} &bull; {emp.designation}</div>
+                        <div className="text-xs">
+                          <div className="font-bold text-slate-700">{emp.name}</div>
+                          <div className="text-[10px] text-slate-450 font-semibold">{emp.department} &bull; {emp.designation}</div>
                         </div>
                       </label>
                     ))
@@ -272,14 +269,14 @@ const EmployeeAssignment = () => {
 
             {/* Due date picker */}
             <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Due Date (Optional)</label>
-              <div class="relative">
-                <Calendar class="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Due Date (Optional)</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 <input
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  class="w-full bg-slate-50 border border-slate-250 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white"
+                  className="w-full bg-slate-50 border border-slate-250 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white"
                 />
               </div>
             </div>
@@ -287,12 +284,12 @@ const EmployeeAssignment = () => {
             <button
               type="submit"
               disabled={submitting || courses.length === 0}
-              class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl shadow-md shadow-indigo-500/10 flex items-center justify-center space-x-1.5 transition disabled:opacity-50 mt-4 text-xs uppercase tracking-wider"
+              className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl shadow-md shadow-indigo-500/10 flex items-center justify-center space-x-1.5 transition disabled:opacity-50 mt-4 text-xs uppercase tracking-wider"
             >
               {submitting ? (
-                <Loader2 class="h-4.5 w-4.5 animate-spin" />
+                <Loader2 className="h-4.5 w-4.5 animate-spin" />
               ) : (
-                <UserCheck class="h-4.5 w-4.5" />
+                <UserCheck className="h-4.5 w-4.5" />
               )}
               <span>Deploy Assignment</span>
             </button>
@@ -300,39 +297,39 @@ const EmployeeAssignment = () => {
         </div>
 
         {/* Assignments active list */}
-        <div class="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm lg:col-span-2 space-y-4 shadow-slate-100/40">
-          <h2 class="text-sm font-extrabold text-slate-800">Active Enrollments ({assignments.length})</h2>
+        <div className="bg-white border border-slate-100 p-5 rounded-2xl shadow-sm lg:col-span-2 space-y-4 shadow-slate-100/40">
+          <h2 className="text-sm font-extrabold text-slate-800">Active Enrollments ({assignments.length})</h2>
           
           {assignments.length === 0 ? (
-            <div class="text-center py-16 text-slate-400 text-xs font-medium">
+            <div className="text-center py-16 text-slate-400 text-xs font-medium">
               No active courses have been assigned to employees yet.
             </div>
           ) : (
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs text-slate-650">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-650">
                 <thead>
-                  <tr class="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100">
-                    <th class="pb-3 font-extrabold">Course Title</th>
-                    <th class="pb-3 font-extrabold">Employee</th>
-                    <th class="pb-3 font-extrabold">Due Date</th>
-                    <th class="pb-3 font-extrabold">Status</th>
-                    <th class="pb-3 font-extrabold text-right">Actions</th>
+                  <tr className="text-[10px] uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                    <th className="pb-3 font-extrabold">Course Title</th>
+                    <th className="pb-3 font-extrabold">Employee</th>
+                    <th className="pb-3 font-extrabold">Due Date</th>
+                    <th className="pb-3 font-extrabold">Status</th>
+                    <th className="pb-3 font-extrabold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100/60 font-medium">
+                <tbody className="divide-y divide-slate-100/60 font-medium">
                   {assignments.map((assign) => (
-                    <tr key={assign._id} class="hover:bg-slate-50/50 transition duration-75">
-                      <td class="py-3.5 font-bold text-slate-700 max-w-[200px] truncate">
+                    <tr key={assign._id} className="hover:bg-slate-50/50 transition duration-75">
+                      <td className="py-3.5 font-bold text-slate-700 max-w-[200px] truncate">
                         {assign.courseId?.title || 'Deleted Course'}
                       </td>
-                      <td class="py-3.5">
-                        <div class="font-bold text-slate-700">{assign.userId?.name || 'Deleted User'}</div>
-                        <div class="text-[10px] text-slate-450 font-semibold">{assign.userId?.department || 'N/A'}</div>
+                      <td className="py-3.5">
+                        <div className="font-bold text-slate-700">{assign.userId?.name || 'Deleted User'}</div>
+                        <div className="text-[10px] text-slate-450 font-semibold">{assign.userId?.department || 'N/A'}</div>
                       </td>
-                      <td class="py-3.5 text-slate-450">
+                      <td className="py-3.5 text-slate-450">
                         {assign.dueDate ? new Date(assign.dueDate).toLocaleDateString() : 'No Limit'}
                       </td>
-                      <td class="py-3.5">
+                      <td className="py-3.5">
                         <span class={`text-[9px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md ${
                           assign.status === 'completed' 
                             ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/60'
@@ -343,13 +340,13 @@ const EmployeeAssignment = () => {
                           {assign.status}
                         </span>
                       </td>
-                      <td class="py-3.5 text-right">
+                      <td className="py-3.5 text-right">
                         <button
                           onClick={() => handleUnassign(assign._id)}
-                          class="p-2 text-slate-400 hover:text-rose-500 hover:bg-slate-50 rounded-lg transition"
+                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-slate-50 rounded-lg transition"
                           title="Remove assignment"
                         >
-                          <Trash2 class="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>

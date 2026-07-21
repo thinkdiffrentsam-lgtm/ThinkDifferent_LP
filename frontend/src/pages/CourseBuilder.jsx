@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
+import { toast } from 'react-hot-toast';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import Papa from 'papaparse';
@@ -108,7 +110,7 @@ const CourseBuilder = () => {
     if (!file) return;
 
     if (file.size > 50 * 1024 * 1024) {
-      alert('File size exceeds the 50MB limit.');
+      toast.error('File size exceeds the 50MB limit.');
       return;
     }
 
@@ -189,7 +191,6 @@ const CourseBuilder = () => {
   };
 
   const handleDeleteModule = async (moduleId) => {
-    if (!window.confirm('Are you sure you want to delete this module?')) return;
     try {
       await api.delete(`/api/courses/${courseId}/modules/${moduleId}`);
       showNotification('Module deleted.');
@@ -366,7 +367,6 @@ const CourseBuilder = () => {
 
   const handleDeleteQuiz = async () => {
     if (!quiz?._id) return;
-    if (!window.confirm('Are you sure you want to delete this quiz?')) return;
     
     try {
       await api.delete(`/api/courses/${courseId}/quizzes/${quiz._id}`);
@@ -388,7 +388,7 @@ const CourseBuilder = () => {
     if (!file) return;
 
     if (file.size > 50 * 1024 * 1024) {
-      alert('File size exceeds the 50MB limit.');
+      toast.error('File size exceeds the 50MB limit.');
       return;
     }
 
@@ -440,7 +440,6 @@ const CourseBuilder = () => {
 
   const handleDeleteCodingTask = async () => {
     if (!codingTask?._id) return;
-    if (!window.confirm('Are you sure you want to delete this coding task?')) return;
     
     try {
       await api.delete(`/api/courses/${courseId}/coding-task`);
@@ -457,41 +456,41 @@ const CourseBuilder = () => {
 
   if (loading) {
     return (
-      <div class="p-8 flex justify-center items-center h-full">
-        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="p-8 flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
 
   const getModuleIcon = (type) => {
     switch (type) {
-      case 'video': return <Video class="h-4 w-4" />;
-      case 'pdf': return <FileText class="h-4 w-4" />;
-      case 'link': return <LinkIcon class="h-4 w-4" />;
-      case 'task': return <Check class="h-4 w-4 text-indigo-500" />;
-      default: return <AlignLeft class="h-4 w-4" />;
+      case 'video': return <Video className="h-4 w-4" />;
+      case 'pdf': return <FileText className="h-4 w-4" />;
+      case 'link': return <LinkIcon className="h-4 w-4" />;
+      case 'task': return <Check className="h-4 w-4 text-indigo-500" />;
+      default: return <AlignLeft className="h-4 w-4" />;
     }
   };
 
   return (
-    <div class="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Top Navigation */}
-      <div class="flex items-center space-x-3 text-xs text-slate-400">
-        <Link to="/admin/courses" class="hover:text-indigo-600 flex items-center space-x-1 transition font-semibold">
-          <ArrowLeft class="h-3.5 w-3.5" />
+      <div className="flex items-center space-x-3 text-xs text-slate-400">
+        <Link to="/admin/courses" className="hover:text-indigo-600 flex items-center space-x-1 transition font-semibold">
+          <ArrowLeft className="h-3.5 w-3.5" />
           <span>Courses</span>
         </Link>
         <span>&bull;</span>
-        <span class="text-slate-600 font-semibold">Builder</span>
+        <span className="text-slate-600 font-semibold">Builder</span>
       </div>
 
       {/* Course Header Summary */}
-      <div class="bg-white border border-slate-100 p-6 rounded-2xl flex flex-col md:flex-row justify-between md:items-center shadow-sm shadow-slate-100/40">
-        <div class="space-y-1">
-          <h1 class="text-xl font-extrabold text-slate-800">{course?.title}</h1>
-          <p class="text-slate-500 text-xs font-medium">{course?.description}</p>
+      <div className="bg-white border border-slate-100 p-6 rounded-2xl flex flex-col md:flex-row justify-between md:items-center shadow-sm shadow-slate-100/40">
+        <div className="space-y-1">
+          <h1 className="text-xl font-extrabold text-slate-800">{course?.title}</h1>
+          <p className="text-slate-500 text-xs font-medium">{course?.description}</p>
         </div>
-        <div class="mt-4 md:mt-0 flex space-x-2 shrink-0">
+        <div className="mt-4 md:mt-0 flex space-x-2 shrink-0">
           <span class={`text-[9px] uppercase font-extrabold tracking-wider px-3 py-1.5 rounded-md self-center border ${
             course?.isPublished 
               ? 'bg-emerald-50 text-emerald-600 border-emerald-100/80' 
@@ -504,20 +503,20 @@ const CourseBuilder = () => {
 
       {/* Notifications */}
       {successMsg && (
-        <div class="bg-emerald-50 border border-emerald-100/80 text-emerald-600 px-4 py-3 rounded-xl flex items-center space-x-2 text-xs font-semibold">
-          <Check class="h-4 w-4" />
+        <div className="bg-emerald-50 border border-emerald-100/80 text-emerald-600 px-4 py-3 rounded-xl flex items-center space-x-2 text-xs font-semibold">
+          <Check className="h-4 w-4" />
           <span>{successMsg}</span>
         </div>
       )}
       {error && (
-        <div class="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3 rounded-xl flex items-center space-x-2 text-xs font-semibold">
-          <AlertCircle class="h-4 w-4" />
+        <div className="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3 rounded-xl flex items-center space-x-2 text-xs font-semibold">
+          <AlertCircle className="h-4 w-4" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div class="border-b border-slate-200/60 flex space-x-6">
+      <div className="border-b border-slate-200/60 flex space-x-6">
         <button
           onClick={() => setActiveTab('modules')}
           class={`pb-2.5 text-xs font-bold tracking-wide transition border-b-2 ${
@@ -546,68 +545,68 @@ const CourseBuilder = () => {
 
       {/* Tab 1: MODULES */}
       {activeTab === 'modules' && (
-        <div class="space-y-6">
+        <div className="space-y-6">
           {/* Add module button */}
           {!showModuleForm && (
             <button
               onClick={() => setShowModuleForm(true)}
-              class="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"
+              className="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"
             >
-              <Plus class="h-4 w-4" />
+              <Plus className="h-4 w-4" />
               <span>Add Module</span>
             </button>
           )}
 
           {/* Module Add/Edit Form */}
           {showModuleForm && (
-            <form onSubmit={handleSaveModule} class="bg-white border border-slate-100 p-6 rounded-2xl space-y-4 shadow-md">
-              <h3 class="text-xs font-extrabold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wider">
+            <form onSubmit={handleSaveModule} className="bg-white border border-slate-100 p-6 rounded-2xl space-y-4 shadow-md">
+              <h3 className="text-xs font-extrabold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wider">
                 {editingModuleId ? 'Edit Module' : 'Create Module'}
               </h3>
               
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="space-y-4 md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-4 md:col-span-2">
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Module Title</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Module Title</label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. Chapter 1: Introduction"
                       value={modTitle}
                       onChange={(e) => setModTitle(e.target.value)}
-                      class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                     />
                   </div>
 
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Short Description (Optional)</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Short Description (Optional)</label>
                     <input
                       type="text"
                       placeholder="Summary of learnings..."
                       value={modDesc}
                       onChange={(e) => setModDesc(e.target.value)}
-                      class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                     />
                   </div>
 
                   <div>
-                    <div class="flex items-center justify-between mb-1">
-                      <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Module Content</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Module Content</label>
                       {(modType === 'pdf' || modType === 'video') && (
-                        <div class="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
                           {uploadingFile ? (
-                            <span class="text-[9px] text-slate-450 flex items-center font-bold">
-                              <Loader2 class="h-3.5 w-3.5 animate-spin mr-1 text-indigo-500" />
+                            <span className="text-[9px] text-slate-450 flex items-center font-bold">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 text-indigo-500" />
                               Uploading file...
                             </span>
                           ) : (
-                            <label class="text-[9px] font-bold text-indigo-650 hover:text-indigo-500 cursor-pointer flex items-center bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-md hover:bg-indigo-100/30 transition">
+                            <label className="text-[9px] font-bold text-indigo-650 hover:text-indigo-500 cursor-pointer flex items-center bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-md hover:bg-indigo-100/30 transition">
                               <span>Upload File</span>
                               <input
                                 type="file"
                                 accept={modType === 'pdf' ? '.pdf' : '.mp4,.mkv,.avi,.webm'}
                                 onChange={handleFileUpload}
-                                class="hidden"
+                                className="hidden"
                               />
                             </label>
                           )}
@@ -626,18 +625,18 @@ const CourseBuilder = () => {
                       }
                       value={modContent}
                       onChange={(e) => setModContent(e.target.value)}
-                      class="w-full bg-slate-55 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition font-mono"
+                      className="w-full bg-slate-55 border border-slate-200 rounded-xl py-2.5 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition font-mono"
                     />
                   </div>
                 </div>
 
-                <div class="space-y-4">
+                <div className="space-y-4">
                   <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Content Type</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Content Type</label>
                     <select
                       value={modType}
                       onChange={(e) => setModType(e.target.value)}
-                      class="w-full bg-slate-55 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                      className="w-full bg-slate-55 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                     >
                       <option value="video">Video Stream</option>
                       <option value="pdf">PDF Document</option>
@@ -647,45 +646,45 @@ const CourseBuilder = () => {
                     </select>
                   </div>
 
-                  <div class="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Minutes</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Minutes</label>
                       <input
                         type="number"
                         min="0"
                         value={modDuration}
                         onChange={(e) => setModDuration(parseInt(e.target.value) || 0)}
-                        class="w-full bg-slate-55 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                        className="w-full bg-slate-55 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                       />
                     </div>
                     <div>
-                      <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sort Order</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sort Order</label>
                       <input
                         type="number"
                         placeholder="e.g. 1"
                         value={modOrder}
                         onChange={(e) => setModOrder(e.target.value)}
-                        class="w-full bg-slate-55 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                        className="w-full bg-slate-55 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+              <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={resetModuleForm}
-                  class="bg-slate-100 hover:bg-slate-200 text-slate-650 text-xs font-bold px-4 py-2 rounded-xl transition"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-650 text-xs font-bold px-4 py-2 rounded-xl transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={modSaving}
-                  class="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition disabled:opacity-50"
+                  className="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition disabled:opacity-50"
                 >
-                  {modSaving && <Loader2 class="h-3.5 w-3.5 animate-spin" />}
+                  {modSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   <span>Save Module</span>
                 </button>
               </div>
@@ -694,27 +693,27 @@ const CourseBuilder = () => {
 
           {/* Module List grid */}
           {modules.length === 0 ? (
-            <div class="bg-white border border-slate-100 p-8 rounded-2xl text-center text-slate-450 text-xs font-medium shadow-sm">
+            <div className="bg-white border border-slate-100 p-8 rounded-2xl text-center text-slate-450 text-xs font-medium shadow-sm">
               This course does not contain any lesson modules yet. Use the button above to add a video, PDF, or text module.
             </div>
           ) : (
-            <div class="space-y-2.5">
+            <div className="space-y-2.5">
               {modules.map((mod) => (
-                <div key={mod._id} class="bg-white border border-slate-100 rounded-xl p-4 flex items-center justify-between shadow-sm hover:border-indigo-100/50 transition">
-                  <div class="flex items-center space-x-4">
-                    <div class="bg-indigo-50 text-indigo-650 p-2.5 rounded-xl border border-indigo-100/60 shrink-0">
+                <div key={mod._id} className="bg-white border border-slate-100 rounded-xl p-4 flex items-center justify-between shadow-sm hover:border-indigo-100/50 transition">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-indigo-50 text-indigo-650 p-2.5 rounded-xl border border-indigo-100/60 shrink-0">
                       {getModuleIcon(mod.type)}
                     </div>
                     <div>
-                      <h4 class="text-xs font-bold text-slate-800">
+                      <h4 className="text-xs font-bold text-slate-800">
                         {mod.order}. {mod.title}
                       </h4>
-                      <p class="text-[11px] text-slate-450 mt-0.5 line-clamp-1 font-medium">{mod.description || 'No description provided.'}</p>
-                      <div class="flex items-center space-x-3 mt-1.5 text-[9px] text-slate-450 font-bold uppercase tracking-wider">
-                        <span class="bg-slate-50 text-slate-600 border border-slate-100 px-2 py-0.5 rounded">{mod.type}</span>
+                      <p className="text-[11px] text-slate-450 mt-0.5 line-clamp-1 font-medium">{mod.description || 'No description provided.'}</p>
+                      <div className="flex items-center space-x-3 mt-1.5 text-[9px] text-slate-450 font-bold uppercase tracking-wider">
+                        <span className="bg-slate-50 text-slate-600 border border-slate-100 px-2 py-0.5 rounded">{mod.type}</span>
                         {mod.duration > 0 && (
-                          <span class="flex items-center">
-                            <Clock class="h-3 w-3 mr-1 text-slate-400" />
+                          <span className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1 text-slate-400" />
                             {mod.duration} min
                           </span>
                         )}
@@ -722,20 +721,20 @@ const CourseBuilder = () => {
                     </div>
                   </div>
 
-                  <div class="flex items-center space-x-1 shrink-0">
+                  <div className="flex items-center space-x-1 shrink-0">
                     <button
                       onClick={() => handleEditModule(mod)}
-                      class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition"
+                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition"
                       title="Edit Module"
                     >
-                      <Edit2 class="h-3.5 w-3.5" />
+                      <Edit2 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleDeleteModule(mod._id)}
-                      class="p-2 text-slate-400 hover:text-rose-500 hover:bg-slate-50 rounded-lg transition"
+                      className="p-2 text-slate-400 hover:text-rose-500 hover:bg-slate-50 rounded-lg transition"
                       title="Delete Module"
                     >
-                      <Trash2 class="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
@@ -747,54 +746,54 @@ const CourseBuilder = () => {
 
       {/* Tab 2: QUIZ ASSESSMENT */}
       {activeTab === 'quiz' && (
-        <div class="bg-white border border-slate-100 p-6 rounded-2xl space-y-6 shadow-sm shadow-slate-100/40">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="bg-white border border-slate-100 p-6 rounded-2xl space-y-6 shadow-sm shadow-slate-100/40">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h2 class="text-sm font-extrabold text-slate-850">Quiz Assessment Builder</h2>
-              <p class="text-[10px] text-slate-450 mt-0.5 font-medium">Attach a final exam. Employees must reach the passing score to complete the course.</p>
+              <h2 className="text-sm font-extrabold text-slate-850">Quiz Assessment Builder</h2>
+              <p className="text-[10px] text-slate-450 mt-0.5 font-medium">Attach a final exam. Employees must reach the passing score to complete the course.</p>
             </div>
             {quiz && (
               <button
                 type="button"
                 onClick={handleDeleteQuiz}
-                class="flex items-center space-x-1.5 text-[10px] font-bold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100/80 hover:bg-rose-600 hover:text-white transition"
+                className="flex items-center space-x-1.5 text-[10px] font-bold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100/80 hover:bg-rose-600 hover:text-white transition"
               >
-                <Trash2 class="h-3.5 w-3.5" />
+                <Trash2 className="h-3.5 w-3.5" />
                 <span>Delete Assessment</span>
               </button>
             )}
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="md:col-span-2">
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Quiz Title</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Quiz Title</label>
               <input
                 type="text"
                 required
                 placeholder="Final Examination"
                 value={quizTitle}
                 onChange={(e) => setQuizTitle(e.target.value)}
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
               />
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Passing Score (%)</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Passing Score (%)</label>
               <input
                 type="number"
                 min="0"
                 max="100"
                 value={quizPassingScore}
                 onChange={(e) => setQuizPassingScore(parseInt(e.target.value) || 0)}
-                class="w-full bg-slate-55 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
+                className="w-full bg-slate-55 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition"
               />
             </div>
           </div>
 
           {/* Questions Editor */}
-          <div class="space-y-4 mt-6">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider">Questions ({quizQuestions.length})</h3>
-              <div class="flex items-center space-x-2">
+          <div className="space-y-4 mt-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">Questions ({quizQuestions.length})</h3>
+              <div className="flex items-center space-x-2">
                 <input 
                   type="file" 
                   accept=".csv" 
@@ -805,88 +804,88 @@ const CourseBuilder = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  class="flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/50 text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                  className="flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/50 text-xs font-bold px-3 py-1.5 rounded-lg transition"
                 >
-                  <Upload class="h-3.5 w-3.5" />
+                  <Upload className="h-3.5 w-3.5" />
                   <span>Bulk Import CSV</span>
                 </button>
                 <button
                   type="button"
                   onClick={addQuestion}
-                  class="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-indigo-650 border border-slate-200/50 text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                  className="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-indigo-650 border border-slate-200/50 text-xs font-bold px-3 py-1.5 rounded-lg transition"
                 >
-                  <Plus class="h-3.5 w-3.5" />
+                  <Plus className="h-3.5 w-3.5" />
                   <span>Add Question</span>
                 </button>
               </div>
             </div>
 
             {quizQuestions.length === 0 ? (
-              <div class="text-center py-8 text-slate-400 text-xs font-medium">
+              <div className="text-center py-8 text-slate-400 text-xs font-medium">
                 No quiz questions added. Press "Add Question" to begin composing questions.
               </div>
             ) : (
-              <div class="space-y-6">
+              <div className="space-y-6">
                 {quizQuestions.map((q, qIndex) => (
-                  <div key={qIndex} class="bg-slate-50/50 border border-slate-100 p-5 rounded-xl space-y-4">
-                    <div class="flex items-start justify-between">
-                      <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/80 px-2.5 py-1 rounded-lg">
+                  <div key={qIndex} className="bg-slate-50/50 border border-slate-100 p-5 rounded-xl space-y-4">
+                    <div className="flex items-start justify-between">
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/80 px-2.5 py-1 rounded-lg">
                         Question {qIndex + 1}
                       </span>
                       <button
                         type="button"
                         onClick={() => deleteQuestion(qIndex)}
-                        class="text-slate-400 hover:text-rose-600 transition"
+                        className="text-slate-400 hover:text-rose-600 transition"
                       >
-                        <Trash2 class="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div class="md:col-span-3">
-                        <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Question Prompt</label>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="md:col-span-3">
+                        <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Question Prompt</label>
                         <input
                           type="text"
                           placeholder="What is the definition of..."
                           value={q.questionText}
                           onChange={(e) => handleQuestionChange(qIndex, 'questionText', e.target.value)}
-                          class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-450 focus:outline-none focus:border-indigo-500 transition"
+                          className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-450 focus:outline-none focus:border-indigo-500 transition"
                         />
                       </div>
                       <div>
-                        <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Points</label>
+                        <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Points</label>
                         <input
                           type="number"
                           value={q.points}
                           onChange={(e) => handleQuestionChange(qIndex, 'points', parseInt(e.target.value) || 0)}
-                          class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 transition"
+                          className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 transition"
                         />
                       </div>
                     </div>
 
                     {/* Options list */}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       {q.options.map((opt, optIndex) => (
-                        <div key={optIndex} class="space-y-1">
-                          <label class="text-[9px] uppercase font-bold text-slate-450 tracking-widest">Option {optIndex + 1}</label>
+                        <div key={optIndex} className="space-y-1">
+                          <label className="text-[9px] uppercase font-bold text-slate-450 tracking-widest">Option {optIndex + 1}</label>
                           <input
                             type="text"
                             placeholder={`Choice ${optIndex + 1}`}
                             value={opt}
                             onChange={(e) => handleOptionChange(qIndex, optIndex, e.target.value)}
-                            class="w-full bg-white border border-slate-200/80 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-450 focus:outline-none focus:border-indigo-500 transition"
+                            className="w-full bg-white border border-slate-200/80 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-450 focus:outline-none focus:border-indigo-500 transition"
                           />
                         </div>
                       ))}
                     </div>
 
                     {/* Correct Option select */}
-                    <div class="w-full md:w-1/3 mt-2">
-                      <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Correct Choice</label>
+                    <div className="w-full md:w-1/3 mt-2">
+                      <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Correct Choice</label>
                       <select
                         value={q.correctOptionIndex}
                         onChange={(e) => handleQuestionChange(qIndex, 'correctOptionIndex', parseInt(e.target.value))}
-                        class="w-full bg-white border border-slate-250 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 transition"
+                        className="w-full bg-white border border-slate-250 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 transition"
                       >
                         {q.options.map((_, idx) => (
                           <option key={idx} value={idx}>
@@ -902,16 +901,16 @@ const CourseBuilder = () => {
           </div>
 
           {/* Save Action */}
-          <div class="flex items-center justify-end pt-5 border-t border-slate-100 mt-6">
+          <div className="flex items-center justify-end pt-5 border-t border-slate-100 mt-6">
             <button
               onClick={handleSaveQuiz}
               disabled={quizSaving}
-              class="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm transition disabled:opacity-50"
+              className="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm transition disabled:opacity-50"
             >
               {quizSaving ? (
-                <Loader2 class="h-4.5 w-4.5 animate-spin" />
+                <Loader2 className="h-4.5 w-4.5 animate-spin" />
               ) : (
-                <Save class="h-4.5 w-4.5" />
+                <Save className="h-4.5 w-4.5" />
               )}
               <span>Save Quiz Assessment</span>
             </button>
@@ -921,26 +920,26 @@ const CourseBuilder = () => {
 
       {/* Tab 3: CODING TASK */}
       {activeTab === 'coding-task' && (
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-          <div class="flex items-center justify-between mb-8">
-            <h2 class="text-xl font-black text-slate-800 tracking-tight flex items-center space-x-2">
-              <FileCode class="h-6 w-6 text-indigo-500" />
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center space-x-2">
+              <FileCode className="h-6 w-6 text-indigo-500" />
               <span>Coding Task</span>
             </h2>
             {codingTask && (
               <button
                 onClick={handleDeleteCodingTask}
-                class="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition"
+                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition"
               >
-                <Trash2 class="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
                 <span>Delete Task</span>
               </button>
             )}
           </div>
 
-          <div class="space-y-6">
+          <div className="space-y-6">
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
                 Task Title
               </label>
               <input
@@ -948,12 +947,12 @@ const CourseBuilder = () => {
                 value={ctTitle}
                 onChange={(e) => setCtTitle(e.target.value)}
                 placeholder="e.g. Final React Project"
-                class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
               />
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
                 Task Description & Instructions
               </label>
               <textarea
@@ -961,21 +960,21 @@ const CourseBuilder = () => {
                 onChange={(e) => setCtDesc(e.target.value)}
                 rows={6}
                 placeholder="Explain the requirements for this coding task..."
-                class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
               />
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
                 Starter Code (Optional)
               </label>
-              <div class="flex items-center space-x-3">
+              <div className="flex items-center space-x-3">
                 <input
                   type="text"
                   value={ctStarterCodeUrl}
                   onChange={(e) => setCtStarterCodeUrl(e.target.value)}
                   placeholder="Paste URL to zip file or upload..."
-                  class="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
+                  className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition"
                 />
                 <button
                   type="button"
@@ -986,9 +985,9 @@ const CourseBuilder = () => {
                     input.click();
                   }}
                   disabled={uploadingCtFile}
-                  class="flex items-center space-x-1.5 px-4 py-3 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
+                  className="flex items-center space-x-1.5 px-4 py-3 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
                 >
-                  {uploadingCtFile ? <Loader2 class="h-4 w-4 animate-spin" /> : <Upload class="h-4 w-4 text-slate-400" />}
+                  {uploadingCtFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 text-slate-400" />}
                   <span>Upload Zip</span>
                 </button>
               </div>
@@ -996,16 +995,16 @@ const CourseBuilder = () => {
           </div>
 
           {/* Save Action */}
-          <div class="flex items-center justify-end pt-5 border-t border-slate-100 mt-8">
+          <div className="flex items-center justify-end pt-5 border-t border-slate-100 mt-8">
             <button
               onClick={handleSaveCodingTask}
               disabled={ctSaving}
-              class="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm transition disabled:opacity-50"
+              className="flex items-center space-x-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm transition disabled:opacity-50"
             >
               {ctSaving ? (
-                <Loader2 class="h-4.5 w-4.5 animate-spin" />
+                <Loader2 className="h-4.5 w-4.5 animate-spin" />
               ) : (
-                <Save class="h-4.5 w-4.5" />
+                <Save className="h-4.5 w-4.5" />
               )}
               <span>Save Coding Task</span>
             </button>
