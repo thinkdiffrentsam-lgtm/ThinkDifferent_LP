@@ -176,15 +176,33 @@ const Messages = () => {
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !activeContact || !socket) return;
-
-    socket.emit('sendMessage', {
-      sender: user._id,
-      receiver: activeContact._id,
-      content: newMessage.trim()
-    });
+    const contentToSend = newMessage.trim();
+    if (!contentToSend || !activeContact) return;
 
     setNewMessage('');
+
+    try {
+      const res = await api.post('/api/messages', {
+        receiver: activeContact._id,
+        content: contentToSend
+      });
+
+      const sentMsg = res.data;
+
+      // Emit via socket if connected for real-time receiver notification
+      if (socket && socket.connected) {
+        socket.emit('sendMessage', {
+          sender: user._id,
+          receiver: activeContact._id,
+          content: contentToSend
+        });
+      } else {
+        setMessages((prev) => [...prev, sentMsg]);
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      toast.error(err.response?.data?.message || 'Failed to send message');
+    }
   };
 
   const deleteMessage = (msgId) => {
