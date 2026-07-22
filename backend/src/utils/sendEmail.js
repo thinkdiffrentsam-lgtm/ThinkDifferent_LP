@@ -1,9 +1,9 @@
 const nodemailer = require('nodemailer');
-const dns = require('dns');
+const dns = require('dns').promises;
 
 /**
- * Send email using Nodemailer SMTP with forced IPv4 DNS lookup and automatic port fallback (465 SSL -> 587 TLS)
- * to bypass cloud provider firewall blocks and prevent connection timeouts on Render/GCP/AWS.
+ * Send email using Nodemailer SMTP with pre-resolved IPv4 IP address and automatic port fallback (465 SSL -> 587 TLS).
+ * Resolving to an IPv4 IP address before connecting guarantees Node.js never attempts IPv6 connections.
  * @param {Object} options - Email parameters { email, subject, message, html }
  */
 const sendEmail = async (options) => {
@@ -17,8 +17,17 @@ const sendEmail = async (options) => {
     return;
   }
 
-  // Default to Port 465 (SSL/TLS) because cloud hosts like Render often block Port 587 (STARTTLS)
+  const targetHost = process.env.SMTP_HOST || 'smtp.gmail.com';
   const primaryPort = parseInt(process.env.SMTP_PORT || '465', 10);
+
+  // Pre-resolve hostname strictly to IPv4 IP address to bypass Node.js dual-stack IPv6 preferences
+  let resolvedIp = targetHost;
+  try {
+    const lookupRes = await dns.lookup(targetHost, { family: 4 });
+    resolvedIp = lookupRes.address;
+  } catch (dnsErr) {
+    console.warn(`[DNS Warning] Could not pre-resolve IPv4 for ${targetHost}, falling back to hostname:`, dnsErr.message);
+  }
 
   const createTransporterForPort = (targetPort) => {
     const isSecure = process.env.SMTP_SECURE !== undefined
@@ -26,16 +35,13 @@ const sendEmail = async (options) => {
       : targetPort === 465;
 
     return nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      host: resolvedIp,
       port: targetPort,
       secure: isSecure,
-      family: 4,
-      dnsOptions: { family: 4 },
-      // Strict IPv4 lookup hook to avoid IPv6 unreachable errors
-      lookup: (hostname, opts, callback) => {
-        dns.lookup(hostname, { ...opts, family: 4 }, callback);
+      tls: {
+        servername: targetHost,
       },
-      connectionTimeout: 10000, // 10 seconds connection timeout
+      connectionTimeout: 10000,
       greetingTimeout: 10000,
       socketTimeout: 15000,
       auth: {
@@ -60,10 +66,9 @@ const sendEmail = async (options) => {
     const primaryTransporter = createTransporterForPort(primaryPort);
     await primaryTransporter.sendMail(mailOptions);
   } catch (err) {
-    // If primary port times out or fails (e.g. port 465 vs 587), automatically retry on fallback port
     const fallbackPort = primaryPort === 465 ? 587 : 465;
     console.warn(`[SMTP Delivery Warning] Port ${primaryPort} failed (${err.message}). Retrying on fallback port ${fallbackPort}...`);
-    
+
     const fallbackTransporter = createTransporterForPort(fallbackPort);
     await fallbackTransporter.sendMail(mailOptions);
   }
