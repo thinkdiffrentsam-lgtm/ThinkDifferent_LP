@@ -9,7 +9,6 @@ const dns = require('dns').promises;
 const sendEmail = async (options) => {
   const smtpUser = process.env.SMTP_USER;
   const isDevMode = !smtpUser || smtpUser === 'your_email@gmail.com';
-
   if (isDevMode) {
     console.log(`[DEVELOPMENT MODE] Email notification queued for ${options.email}:`);
     console.log(`Subject: ${options.subject}`);
@@ -20,20 +19,21 @@ const sendEmail = async (options) => {
   const targetHost = process.env.SMTP_HOST || 'smtp.gmail.com';
   const primaryPort = parseInt(process.env.SMTP_PORT || '465', 10);
 
-  // Pre-resolve hostname strictly to IPv4 IP address to bypass Node.js dual-stack IPv6 preferences
-  let resolvedIp = targetHost;
+  // Pre-resolve hostname strictly to an IPv4 IP address to bypass Node.js dual-stack IPv6 preferences.
+  // If this fails, we throw rather than silently falling back to the hostname — falling back
+  // would let Node's resolver pick IPv6 again, reintroducing the exact ENETUNREACH bug this exists to fix.
+  let resolvedIp;
   try {
     const lookupRes = await dns.lookup(targetHost, { family: 4 });
     resolvedIp = lookupRes.address;
   } catch (dnsErr) {
-    console.warn(`[DNS Warning] Could not pre-resolve IPv4 for ${targetHost}, falling back to hostname:`, dnsErr.message);
+    throw new Error(`Could not resolve IPv4 address for ${targetHost}: ${dnsErr.message}`);
   }
 
   const createTransporterForPort = (targetPort) => {
     const isSecure = process.env.SMTP_SECURE !== undefined
       ? process.env.SMTP_SECURE === 'true'
       : targetPort === 465;
-
     return nodemailer.createTransport({
       host: resolvedIp,
       port: targetPort,
@@ -53,7 +53,6 @@ const sendEmail = async (options) => {
 
   const fromName = process.env.FROM_NAME || process.env.SMTP_FROM || 'ThinkDifferent LMS';
   const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
-
   const mailOptions = {
     from: `"${fromName}" <${fromEmail}>`,
     to: options.email,
@@ -62,15 +61,21 @@ const sendEmail = async (options) => {
     html: options.html,
   };
 
+  let primaryTransporter;
+  let fallbackTransporter;
+
   try {
-    const primaryTransporter = createTransporterForPort(primaryPort);
+    primaryTransporter = createTransporterForPort(primaryPort);
     await primaryTransporter.sendMail(mailOptions);
   } catch (err) {
     const fallbackPort = primaryPort === 465 ? 587 : 465;
     console.warn(`[SMTP Delivery Warning] Port ${primaryPort} failed (${err.message}). Retrying on fallback port ${fallbackPort}...`);
-
-    const fallbackTransporter = createTransporterForPort(fallbackPort);
+    fallbackTransporter = createTransporterForPort(fallbackPort);
     await fallbackTransporter.sendMail(mailOptions);
+  } finally {
+    // Close pooled/kept-alive sockets so nothing dangles on Render between calls.
+    if (primaryTransporter) primaryTransporter.close();
+    if (fallbackTransporter) fallbackTransporter.close();
   }
 };
 
