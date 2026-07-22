@@ -1,5 +1,35 @@
-const { Resend } = require('resend');
 const nodemailer = require('nodemailer');
+
+/**
+ * Send email via Resend HTTP REST API (using native fetch, zero npm dependency required).
+ */
+const sendViaResend = async (options, apiKey, fromName) => {
+  const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.FROM_EMAIL || 'onboarding@resend.dev';
+  const recipients = Array.isArray(options.email) ? options.email : [options.email];
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey.trim()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: `${fromName} <${fromEmail}>`,
+      to: recipients,
+      subject: options.subject,
+      text: options.message,
+      html: options.html || `<p>${(options.message || '').replace(/\n/g, '<br>')}</p>`,
+    }),
+  });
+
+  const resData = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`Resend API error (${response.status}): ${resData.name || ''} - ${resData.message || JSON.stringify(resData)}`);
+  }
+
+  return resData;
+};
 
 /**
  * Send email using Resend (primary) with fallback to Nodemailer SMTP or console logging.
@@ -20,24 +50,9 @@ const sendEmail = async (options) => {
 
   const fromName = process.env.FROM_NAME || process.env.SMTP_FROM || 'ThinkDifferent LMS';
 
-  // 1. Use Resend API if RESEND_API_KEY is defined
+  // 1. Use Resend API if RESEND_API_KEY is present
   if (resendApiKey) {
-    const resend = new Resend(resendApiKey);
-    const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.FROM_EMAIL || 'onboarding@resend.dev';
-
-    const { data, error } = await resend.emails.send({
-      from: `${fromName} <${fromEmail}>`,
-      to: Array.isArray(options.email) ? options.email : [options.email],
-      subject: options.subject,
-      text: options.message,
-      html: options.html || `<p>${options.message.replace(/\n/g, '<br>')}</p>`,
-    });
-
-    if (error) {
-      throw new Error(`Resend email delivery failed: ${error.message}`);
-    }
-
-    return data;
+    return await sendViaResend(options, resendApiKey, fromName);
   }
 
   // 2. Fallback to Nodemailer SMTP
