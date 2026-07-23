@@ -105,10 +105,24 @@ router.post('/', protect, admin, async (req, res) => {
     // Dispatch email notifications to assigned users
     if (assignedUsers.length > 0) {
       const formattedDueDate = dueDate ? new Date(dueDate).toLocaleDateString() : 'No specific due date';
+
+      let rawClientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://think-different-lp-lqg6.vercel.app';
+      rawClientUrl = rawClientUrl.trim();
+      if (rawClientUrl.includes('https://') && rawClientUrl.startsWith('http://localhost:3000')) {
+        rawClientUrl = rawClientUrl.replace('http://localhost:3000', '');
+      }
+      if (!rawClientUrl.startsWith('http://') && !rawClientUrl.startsWith('https://')) {
+        rawClientUrl = `https://${rawClientUrl}`;
+      }
+      rawClientUrl = rawClientUrl.replace(/\/$/, '');
+      const courseDashboardUrl = rawClientUrl.endsWith('/employee/my-courses')
+        ? rawClientUrl
+        : `${rawClientUrl}/employee/my-courses`;
+
       for (const userObj of assignedUsers) {
         try {
           const subject = `New Course Assigned: ${course.title}`;
-          const message = `Hello ${userObj.name},\n\nYou have been assigned a new course: "${course.title}".\nDue Date: ${formattedDueDate}\n\nPlease log in to your learning portal to access the course.\n\nBest regards,\nThinkDifferent LMS Admin Team`;
+          const message = `Hello ${userObj.name},\n\nYou have been assigned a new course: "${course.title}".\nDue Date: ${formattedDueDate}\n\nPlease access your course dashboard at: ${courseDashboardUrl}\n\nBest regards,\nThinkDifferent LMS Admin Team`;
 
           const html = `
 <!DOCTYPE html>
@@ -195,7 +209,7 @@ router.post('/', protect, admin, async (req, res) => {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
                 <tr>
                   <td align="center">
-                    <a href="http://localhost:3000" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 8px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+                    <a href="${courseDashboardUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 8px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
                       Access Course Dashboard &rarr;
                     </a>
                   </td>
