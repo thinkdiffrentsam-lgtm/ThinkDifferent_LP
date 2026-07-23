@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   // Point to the Render backend in production, otherwise use empty string (Vite proxy)
-  baseURL: import.meta.env.PROD ? 'https://thinkdifferent-lp-w1i8.onrender.com' : '', 
+  baseURL: import.meta.env.PROD ? 'https://thinkdifferent-lp-2.onrender.com' : '', 
 });
 
 // Automatically inject JWT token into requests
